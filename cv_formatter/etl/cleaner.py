@@ -31,6 +31,12 @@ def clean_text(text: str) -> str:
     
     logger.debug(f"Cleaning text of size {len(text)}")
     
+    # --- STAGE 0: EMOJI REMOVAL ---
+    # ATS systems choke on emojis. We remove them completely.
+    # We use the 'emoji' library for accurate detection.
+    import emoji
+    text = emoji.replace_emoji(text, replace='')
+    
     # --- STAGE 1: UNICODE NORMALIZATION ---
     # Ensures consistent representation of characters (e.g., 'ñ', 'é').
     # 'NFKC' compatibly decomposes characters which helps in regex matching.
@@ -39,7 +45,7 @@ def clean_text(text: str) -> str:
     # --- STAGE 2: VISUAL ARTIFACTS REMOVAL ---
     # Replaces fancy designer bullets (•, ⁃, ‣, etc) with standard ASCII dashes.
     # Added robust list support: *, +, and various unicode bullets.
-    text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u2212\u27a2\u27a4\u25b6]', '-', text)
+    text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u2212\u27a2\u27a4\u25b6➤➢➔➜⇒►●■◆▪▫]', '-', text)
     
     # Also standardize simple asterisks used as bullets at start of lines
     text = re.sub(r'(?m)^\s*\* ', '- ', text)

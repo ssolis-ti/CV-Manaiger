@@ -11,10 +11,10 @@ Flow:
 Design Pattern: Facade. Clients (CLI, API) only interact with 'CVProcessor', hiding complexity.
 """
 from typing import Dict, Any
-from typing import Dict, Any
 import time
 from cv_formatter.etl.cleaner import clean_text
 from cv_formatter.etl.section_extractor import extract_sections
+from cv_formatter.etl.triage import TriageDaemon
 from cv_formatter.llm.tagger import tag_cv
 from cv_formatter.formatter.json_formatter import format_to_dict
 from cv_formatter.utils.logging_config import setup_logging, get_logger
@@ -28,6 +28,9 @@ class CVProcessor:
     Facade to process a CV from raw text to structured JSON.
     """
     
+    def __init__(self):
+        self.triage_daemon = TriageDaemon()
+
     def process_cv(self, raw_text: str) -> dict:
         """
         Main entry point (Facade Method).
@@ -35,6 +38,27 @@ class CVProcessor:
         """
         try:
             start_time = time.time()
+            
+            # ---------------------------------------------------------
+            # STEP 0: TRIAGE - GATEKEEPER (Phase 6)
+            # ---------------------------------------------------------
+            logger.info("Step 0: Triage Check...")
+            is_valid, reason, meta_context = self.triage_daemon.triage(raw_text)
+            
+            if not is_valid:
+                logger.warning(f"Triage Rejected: {reason}")
+                raise ValueError(f"Document rejected by Triage: {reason}")
+                
+            logger.info(f"Triage Accepted. Language: {meta_context.get('language')}")
+            
+            # ---------------------------------------------------------
+            # STEP 0.5: ATS CHECKER
+            # ---------------------------------------------------------
+            logger.info("Step 0.5: ATS Compliance Audit...")
+            from cv_formatter.etl.ats_checker import ATSChecker
+            ats_checker = ATSChecker()
+            ats_result = ats_checker.check(raw_text)
+            logger.info(f"ATS Score: {ats_result.score}/100. Issues: {len(ats_result.issues)}")
             
             # ---------------------------------------------------------
             # STEP 1: ETL - CLEANING
@@ -67,6 +91,9 @@ class CVProcessor:
             # [DIRECTION]: Structured String -> Pydantic Model (CVData)
             logger.info("Step 3: LLM Tagging & Analysis...")
             cv_data_obj = tag_cv(context_for_llm)
+            
+            # [INJECTION]: Attach ATS Result to the Object
+            cv_data_obj.ats_analysis = ats_result
             
             # ---------------------------------------------------------
             # STEP 4: FORMATTER - OUTPUT

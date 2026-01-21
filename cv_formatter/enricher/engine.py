@@ -35,9 +35,21 @@ class EnrichmentService:
         candidate_name = cv_json.get('full_name', 'Unknown')
         logger.info(f"Enriching CV {cv_id} (Candidate: {candidate_name}) using {self.model}...")
         
-        # We send the JSON string to save tokens (no need to re-parse raw text)
-        clean_json_str = json.dumps(cv_json, ensure_ascii=False)
+        # 0. Deterministic Timeline Analysis (Layer 2.1)
+        # This is calculated locally, NOT by the LLM, to ensure math accuracy.
+        from cv_formatter.formatter.json_formatter import CVData
+        from cv_formatter.enricher.timeline_analyzer import TimelineAnalyzer
         
+        # Re-construct CVData to pass to logic (inefficient? maybe, but robust)
+        # Ideally Facade passes the object, but here we have dict.
+        # Check if caller passed object or dict. Assuming dict.
+        try:
+             cv_obj = CVData(**cv_json)
+             timeline_result = TimelineAnalyzer().analyze(cv_obj)
+        except Exception as e:
+             logger.warning(f"Timeline analysis failed: {e}")
+             timeline_result = None
+
         system_prompt = """
         You are an expert Technical Recruiter and Career Coach.
         You will receive a CV in JSON format.
@@ -47,19 +59,28 @@ class EnrichmentService:
         
         --- OBJECTIVES ---
         1. **Market Signals**:
-           - **TechStack (Dev/Core)**: Languages, Frameworks, Cloud (e.g. Python, React, AWS, Windows Server).
-           - **Tools (SaaS/Ops)**: Platforms, Ticket systems, Design tools (e.g. Jira, Slack, Figma, MercadoPublico, SAP).
-           - **Role Fit**: Suggest specific job titles (e.g. "Soporte TI N2", "DevOps Junior").
+           - **TechStack**: Languages, Frameworks, Cloud.
+           - **Tools**: Platforms, Ticket systems.
+           - **Role Fit**: Suggest specific job titles.
         
-        2. **Coach Feedback (CareerPath)**:
-           - **Missing Skills**: What is missing for the NEXT level? (e.g. "If Sysadmin, missing Cloud/Azure knowledge").
-           - **Certifications**: Suggest specific certs (e.g. "ITIL v4", "AWS Practitioner").
-           - **Tips**: Constructive criticism on the CV content (e.g. "Falta cuantificar resultados").
+        2. **Profile Signals (SWOT)**:
+           - **Strengths**: What stands out? (e.g. "Long tenure", "Promotions", "Impact").
+           - **Weaknesses**: What is lacking? (e.g. "No Cloud exp", "Only maintenance roles").
+           - **Risk Flags**: Any huge red flags? (e.g. "Vague descriptions", "Regression in role lists").
+           - **Growth Potential**: High/Medium/Low based on adaptability.
+
+        3. **Coach Feedback (CareerPath)**:
+           - **Missing Skills**: What is missing for the NEXT level?
+           - **Certifications**: Suggest specific certs.
+           - **Tips**: Constructive criticism on the CV content.
         
         --- OUTPUT ---
         Strictly adhere to the `EnrichmentData` JSON schema.
         Be critical but constructive.
         """
+
+        # Prepare payload
+        clean_json_str = json.dumps(cv_json, ensure_ascii=False)
 
         try:
             completion = self.client.beta.chat.completions.parse(
@@ -74,6 +95,10 @@ class EnrichmentService:
             result = completion.choices[0].message.parsed
             # Ensure the ID matches the source
             result.target_cv_id = cv_id
+            
+            # Inject Deterministic Analysis
+            if timeline_result:
+                result.timeline_analysis = timeline_result
             
             return result
 

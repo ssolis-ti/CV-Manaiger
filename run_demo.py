@@ -162,6 +162,20 @@ def main():
             cv_data = result["source_cv"]
             enrichment_data = result["enrichment"]
             
+            # --- PHASE 6 VISUALIZATION: ATS & TRIAGE ---
+            ats_data = cv_data.get('ats_analysis', {})
+            if ats_data:
+                score_color = "green" if ats_data.get('score', 0) > 80 else "yellow" if ats_data.get('score', 0) > 50 else "red"
+                ats_panel = Panel(
+                    f"Score: [{score_color}]{ats_data.get('score', 0)}/100[/{score_color}]\n" + 
+                    f"Parsable: {'✅' if ats_data.get('is_parsable') else '❌'}\n" +
+                    f"Issues: {len(ats_data.get('issues', []))}\n" +
+                    f"[dim]{', '.join(ats_data.get('issues', [])[:3])}[/dim]",
+                    title="🕵️ ATS Inspector",
+                    border_style="blue"
+                )
+                console.print(ats_panel)
+
             # Generate dynamic filename
             import re
             from datetime import datetime
@@ -199,25 +213,35 @@ def main():
                 f.write(md_output)
 
             console.print(f"\n[bold green]¡Éxito! Análisis Completado.[/bold green]")
-            console.print(f"[blue]JSON Original:[/blue] {output_json}")
-            if enrichment_data:
-                console.print(f"[magenta]INSIGHTS Gemma 3:[/magenta] {output_insights}")
-            console.print(f"[blue]Markdown:[/blue] {output_md}")
-            
-            console.print(Panel("Vista Previa (Primeras 20 líneas)", expand=False))
-            console.print(JSON.from_data(cv_data))
             
             # Show Insight Preview if available
             if enrichment_data:
-                stack = enrichment_data.get('market_signals', {}).get('stack_detected', [])
-                tips = enrichment_data.get('coach_feedback', {}).get('improvement_tips', [])
+                # PHASE 6.5: TIMELINE & SWOT
+                timeline = enrichment_data.get('timeline_analysis', {})
+                profile = enrichment_data.get('profile_signals', {})
+                market = enrichment_data.get('market_signals', {})
                 
-                insight_text = f"[bold yellow]Stack Detectado:[/bold yellow] {', '.join(stack[:5])}...\n"
-                insight_text += f"[bold yellow]Tips de Mejora:[/bold yellow]\n"
-                for tip in tips[:3]:
-                    insight_text += f"- {tip}\n"
+                # Stack
+                stack = market.get('stack_detected', [])
+                
+                insight_text = f"[bold yellow]Stack Detectado:[/bold yellow] {', '.join(stack[:6])}...\n\n"
+                
+                if timeline:
+                    insight_text += f"[bold cyan]Timeline Logic (Math):[/bold cyan]\n"
+                    insight_text += f"• Exp Total: {timeline.get('total_years_experience')} años\n"
+                    insight_text += f"• Estabilidad: {timeline.get('stability_score')}/10 | Promedio: {timeline.get('avg_tenure_months')} meses/rol\n"
+                    if timeline.get('detected_gaps'):
+                        insight_text += f"• [red]GAPS:[/red] {len(timeline['detected_gaps'])} detectados.\n"
+                    insight_text += "\n"
+                
+                if profile:
+                    insight_text += f"[bold magenta]SWOT (LLM):[/bold magenta]\n"
+                    if profile.get('strengths'):
+                        insight_text += f"• ✅ {profile['strengths'][0]}\n"
+                    if profile.get('risk_flags'):
+                        insight_text += f"• 🚩 {profile['risk_flags'][0]}\n"
                     
-                console.print(Panel(insight_text, title="🤖 Insights de Gemma 3 (Preview)", border_style="magenta"))
+                console.print(Panel(insight_text, title="🤖 Insights de Gemma 3 (Enrichment v2)", border_style="magenta"))
             
             # Ask to continue
             if not Prompt.ask("\n¿Procesar otro CV?", choices=["y", "n"], default="y") == "y":

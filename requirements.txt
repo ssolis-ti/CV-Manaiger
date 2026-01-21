@@ -6,3 +6,5 @@ tiktoken
 tenacity
 rich
 pyperclip
+langdetect
+emoji

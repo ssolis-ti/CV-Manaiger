@@ -43,6 +43,13 @@ class AnalysisMetadata(BaseModel):
     risk_flags: List[str] = Field(default_factory=list, description="Negative indicators (e.g. 'Job Hopper', 'Employment Gaps')")
     strength_signals: List[str] = Field(default_factory=list, description="Positive indicators (e.g. 'Promotion', 'High Impact', 'Prestigous Company')")
 
+class ATSAnalysis(BaseModel):
+    score: int = Field(0, description="ATS Compatibility Score (0-100)")
+    is_parsable: bool = Field(True, description="Human readable?")
+    issues: List[str] = Field(default_factory=list, description="List of ATS-unfriendly elements found (e.g. 'Emojis', 'Columns identified')")
+    missing_sections: List[str] = Field(default_factory=list, description="Critical sections not found")
+
+
 class CVData(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID for this CV version")
     full_name: Optional[str] = Field(None, description="Candidate's full name")
@@ -54,6 +61,7 @@ class CVData(BaseModel):
     
     # Metadata / Analysis (New Section)
     metadata: Optional[AnalysisMetadata] = Field(default_factory=AnalysisMetadata, description="AI-inferred analysis of the candidate")
+    ats_analysis: Optional[ATSAnalysis] = Field(None, description="Technical ATS check results")
     
     experience: List[ExperienceEntry] = Field(default_factory=list)
     education: List[EducationEntry] = Field(default_factory=list)
