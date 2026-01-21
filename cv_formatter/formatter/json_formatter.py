@@ -90,6 +90,23 @@ class ATSAnalysis(BaseModel):
     issues: List[str] = Field(default_factory=list, description="List of ATS-unfriendly elements found (e.g. 'Emojis', 'Columns identified')")
     missing_sections: List[str] = Field(default_factory=list, description="Critical sections not found")
 
+    @model_validator(mode='before')
+    @classmethod
+    def check_lists(cls, v):
+        """
+        Resilience: LLM sometimes returns '0' or '1' instead of a list for issues.
+        """
+        if isinstance(v, dict):
+            for field in ['issues', 'missing_sections']:
+                val = v.get(field)
+                if isinstance(val, int):
+                    # If it says "0 issues", convert to empty list
+                    v[field] = []
+                elif isinstance(val, str):
+                     # If it says "None", convert to empty
+                     v[field] = [val]
+        return v
+
 
 class CVData(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID for this CV version")

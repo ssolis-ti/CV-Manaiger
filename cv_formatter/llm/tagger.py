@@ -34,7 +34,7 @@ class LLMTagger:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception)
     )
-    def tag_cv(self, text: str) -> CVData:
+    def tag_cv(self, text: str, language: str = "es") -> CVData:
         """
         Uses OpenAI to analyze the raw (or cleaned) text and extract structured data.
         Includes Retries and Token Logging.
@@ -45,76 +45,103 @@ class LLMTagger:
         # [PROMPT STRATEGY]
         # We act as an HR Expert. 
         # Crucial instruction: "Adhere strictly to JSON Schema".
-        # This reduces "yapping" (conversational filler) and forces data-only output.
-        system_prompt = """
-        You are an expert HR AI assistant. Your task is to extract structured information from a CV/Resume.
         
-        --- INPUT DATA ---
-        You will receive a semi-structured text. 
-        It has been processed by an ETL layer to normalize formatting.
-        
-        --- OBJETIVOS ---
-        1. **Extracción**: Identifica hechos claros (Fechas, Empresas, Instituciones).
-           - **Smart Parsing**: Si Empresa y Cargo están en la misma línea, sepáralos.
-           - **Fechas**: Si ves "2023", úsalo. "Presente"/"Actualidad" es la fecha actual.
-           - **ADVERTENCIA**: Las fechas pueden aparecer AL FINAL del bloque de texto. ¡Escanea todo!
-           
-           --- NON-NEGOTIABLE RULE: DATES (CRITICAL) ---
-           You MUST extract dates for every experience entry.
-           Do not leave them null. Look for:
-           - "YYYY - YYYY"
-           - "Month/Year - Present"
-           - "Current" / "Actualidad" -> end_date: "Present"
-           
-           If you see a date range like "2018 - 2020", split it!
-           start_date: "2018"
-           end_date: "2020"
+        # PROMPT REPOSITORY
+        PROMPTS = {
+            "es": """
+            Eres un asistente experto en RRHH. Tu tarea es extraer información estructurada de un CV.
+            
+            --- OBJETIVOS ---
+            1. **Extracción**: Identifica hechos claros (Fechas, Empresas, Instituciones).
+               - **Fechas**: Si ves "2023", úsalo. "Presente"/"Actualidad" es la fecha actual.
+               - **ADVERTENCIA**: Las fechas pueden aparecer AL FINAL del bloque de texto. ¡Escanea todo!
+               
+               --- REGLA NO NEGOCIABLE: FECHAS (CRITICO) ---
+               DEBES extraer las fechas de cada experiencia. No las dejes vacías (null).
+               Busca formatos como: "Mes/Año - Actualidad", "2018 - 2019".
+               Si la fecha está en la línea del título (ej: "Google, 2020-2022"), EXTRAELA.
+               
+               *** ESTRATEGIA DE COLUMNAS (IMPORTANTE) ***
+               Si ves una lista de fechas AL FINAL del texto (ej. "Mar 2023... Ene 2020..."),
+               y una lista de roles AL PRINCIPIO, asígnalas SECUENCIALMENTE.
+               (1er Rol -> 1ra Fecha, 2do Rol -> 2da Fecha, etc.)
+               NO ignores los roles solo porque las fechas están lejos.
+               
+               --- NON-NEGOTIABLE RULE: SKILLS ---
+               The 'skills' field is an OBJECT, not a string or list.
+               Structure: { "hard_skills": [...], "soft_skills": [...] }
+               
+            2. **Análisis Profundo (Metadata)**:
+               - **Seniority**: Estima nivel (Junior, Mid, Senior, Lead).
+               - **Estilo**: Tono del CV (Conciso, Verboso, Orientado a la acción).
+            
+            3. **Extracción de PERLAS OCULTAS**:
+               - **Hard Skills**: Busca herramientas explícitas.
+               - **Impacto**: Busca métricas numéricas.
+               
+               --- ONE-SHOT EXAMPLE (Ejemplo) ---
+               Input: 
+               "Gerente de TI | Microsoft
+               Responsable de infraestructura global.
+               Ene 2020 - Actualidad" 
 
-           If the date is in the header line (e.g. "Google, 2020-2022"), EXTACT IT.
-           Do not include the date in the 'company' or 'title' fields. Move it to start_date/end_date.
-           
-           --- NON-NEGOTIABLE RULE: SKILLS ---
-           The 'skills' field is an OBJECT, not a string or list.
-           Structure: { "hard_skills": [...], "soft_skills": [...] }
-
-           Any skill explicitly mentioned in the text MUST be added to 'skills.hard_skills'.
-           Inferred or generalized skills go ONLY to metadata or enrichment.
-        2. **Análisis Profundo (Metadata)**:
-           - **Seniority**: Estima nivel (Junior, Mid, Senior, Lead).
-           - **Estilo**: Tono del CV (Conciso, Verboso, Orientado a la acción).
-           - **Resumen LLM**: Breve resumen interno para reclutadores (ej. "Fuerte en Java pero saltos cortos").
-           - **Análisis (Flags)**:
-             - **Riesgos**: 'Job Hopping' (muchos puestos cortos), 'Lagunas' (>6 meses).
-             - **Fortalezas**: 'Promociones rápidas', 'Empresas Top', 'Liderazgo'.
-        3. **Extracción de PERLAS OCULTAS (Crucial)**:
-           - **Hard Skills (HECHOS)**: Busca herramientas/tecnologías explícitas (e.g. "Windows", "Python").
-             > **REGLA**: Si la palabra está en el texto, DEBE ir a 'skills.hard_skills'. No la guardes para análisis.
-           - **Impacto**: Busca números (%, $, aumento, reducción) -> 'impact_metrics'.
-           - **Soft Skills**: Palabras clave de comunicación/liderazgo -> 'skills.soft_skills'.
-           
-           --- ONE-SHOT EXAMPLE (Ejemplo) ---
-           Input:
-           "Gerente de Proyectos | Microsoft
-           Ene 2020 - Actualidad
-           Liderazgo de equipos."
-
-           Output (JSON):
-           {
-             "experience": [
+               Output (JSON):
                {
-                 "title": "Gerente de Proyectos",
-                 "company": "Microsoft",
-                 "start_date": "2020-01",
-                 "end_date": "Present",
-                 "description": "Liderazgo de equipos."
+                 "experience": [
+                   {
+                     "title": "Gerente de TI",
+                     "company": "Microsoft",
+                     "start_date": "2020-01",
+                     "end_date": "Present",
+                     "description": "Responsable de infraestructura global."
+                   }
+                 ]
                }
-             ]
-           }
+            
+            --- OUTPUT FORMAT ---
+            You MUST adhere strictly to the provided JSON Schema.
+            """,
+            
+            "en": """
+            You are an expert HR AI assistant. Your task is to extract structured information from a CV/Resume.
+            
+            --- OBJECTIVES ---
+            1. **Extraction**: Identify clear facts (Dates, Companies, Schools).
+               - **Dates**: If only "2023" is present, use it. "Present"/"Current" is today.
+               - **WARNING**: Dates might appear at the END of the text block. Scan everything!
+               
+               --- NON-NEGOTIABLE RULE: DATES (CRITICAL) ---
+               You MUST extract dates for every experience entry. Do not leave them null.
+               Look for: "Month/Year - Present", "YYYY - YYYY".
+               If date is in the header line, EXTRACT IT.
+               
+               --- NON-NEGOTIABLE RULE: SKILLS ---
+               The 'skills' field is an OBJECT. Structure: { "hard_skills": [...], "soft_skills": [...] }
+               
+            2. **Deep Analysis (Metadata)**:
+               - **Seniority**: Estimate level (Junior, Mid, Senior).
+               - **Style**: Analyze writing tone.
+            
+            3. **Hidden Gems**:
+               - **Hard Skills**: explicit tools/techs.
+               - **Impact**: numeric metrics.
+               
+               --- ONE-SHOT EXAMPLE ---
+               Input: "Project Manager | Microsoft | Jan 2020 - Present"
+               Output (JSON): { "experience": [{ "title": "Project Manager", "start_date": "2020-01", "end_date": "Present" }] }
+            
+            --- OUTPUT FORMAT ---
+            You MUST adhere strictly to the provided JSON Schema.
+            """
+        }
+        
+        # Select prompt based on detected language (Default to English if unknown, or Spanish if preferred)
+        # Using 'es' as default/fallback since this is a Latam-focused tool currently.
+        lang_key = language if language in PROMPTS else "es"
+        system_prompt = PROMPTS[lang_key]
+        
+        logger.info(f"Using System Prompt Language: {lang_key}")
 
-        --- OUTPUT FORMAT ---
-        You MUST adhere strictly to the provided JSON Schema.
-        If a field is ambiguous, prefer null. Do not hallucinate data not present in text.
-        """
         
         # 1. OPTIMIZATION: Count Tokens before sending
         # [FAILSAFE]: Truncate robustly to prevent 400 Bad Request on massive inputs.
@@ -154,6 +181,6 @@ class LLMTagger:
             # Raise so Facade can handle it or let it crash depending on policy
             raise e
 
-def tag_cv(text: str) -> CVData:
+def tag_cv(text: str, language: str = "es") -> CVData:
     tagger = LLMTagger()
-    return tagger.tag_cv(text)
+    return tagger.tag_cv(text, language)

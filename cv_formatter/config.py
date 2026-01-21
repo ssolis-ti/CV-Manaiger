@@ -27,7 +27,7 @@ class Config:
     
     # --- MODEL CONFIGURATION ---
     # 1. STRUCTURING (ETL/Facts) - Default: Schematron
-    MODEL_STRUCTURE = os.getenv("MODEL_STRUCTURE", "inference-net/schematron-8b")
+    MODEL_STRUCTURE = os.getenv("MODEL_STRUCTURE", "google/gemma-3-27b-instruct/bf-16")
     API_KEY_STRUCTURE = os.getenv("API_KEY_STRUCTURE", _GLOBAL_API_KEY)
 
     # 2. ENRICHMENT (Insights/Ideas) - Default: Gemma 3

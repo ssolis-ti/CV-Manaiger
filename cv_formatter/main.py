@@ -90,7 +90,32 @@ class CVProcessor:
             # ---------------------------------------------------------
             # [DIRECTION]: Structured String -> Pydantic Model (CVData)
             logger.info("Step 3: LLM Tagging & Analysis...")
-            cv_data_obj = tag_cv(context_for_llm)
+            
+            # [CIRCUIT BREAKER]
+            # Try LLM first. If it crashes (500/429) or returns empty, switch to Heuristic.
+            try:
+                cv_data_obj = tag_cv(context_for_llm, language=detected_lang)
+            except Exception as e:
+                logger.error(f"LLM Tagging Service Failed: {e}")
+                logger.warning("⚠ API Crash detected. Activating Heuristic Fallback immediately.")
+                cv_data_obj = None
+
+            # [FALLBACK CHECK]
+            # 1. If cv_data_obj is None (API Crash)
+            # 2. OR If cv_data_obj.experience is empty (Parsing Failure)
+            if not cv_data_obj or not cv_data_obj.experience:
+                logger.warning("Attempting Heuristic Fallback (Regex-based)...")
+                from cv_formatter.etl.heuristic_extractor import HeuristicExtractor
+                heuristic = HeuristicExtractor()
+                fallback_data = heuristic.extract(raw_text)
+                
+                if not cv_data_obj:
+                    # Case 1: Total Replacement
+                    cv_data_obj = fallback_data
+                else:
+                    # Case 2: Merge (Keep LLM metadata if valid, but fill Experience)
+                    cv_data_obj.experience = fallback_data.experience
+                    cv_data_obj.full_name = cv_data_obj.full_name or fallback_data.full_name
             
             # [INJECTION]: Attach ATS Result to the Object
             cv_data_obj.ats_analysis = ats_result
