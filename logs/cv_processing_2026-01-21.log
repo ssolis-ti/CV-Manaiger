@@ -1,0 +1,16 @@
+2026-01-21 11:09:05 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:09:05 | INFO     | cv_formatter.main    | Starting CV Processing Pipeline
+2026-01-21 11:09:05 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 11:09:05 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 11:09:05 | INFO     | cv_formatter.main    | Sections found: ['raw_content']
+2026-01-21 11:09:05 | WARNING  | cv_formatter.main    | No specific sections identified. Using raw content for LLM.
+2026-01-21 11:09:05 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis (OpenAI)...
+2026-01-21 11:09:11 | INFO     | cv_formatter.llm.tagger | Preparing to send ~187 input tokens to gpt-4o-mini
+2026-01-21 11:09:12 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2026-01-21 11:09:12 | ERROR    | cv_formatter.llm.tagger | Error calling OpenAI after retries: Error code: 401 - {'error': {'message': 'Incorrect API key provided: your_api*****here. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-21 11:09:14 | INFO     | cv_formatter.llm.tagger | Preparing to send ~187 input tokens to gpt-4o-mini
+2026-01-21 11:09:14 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2026-01-21 11:09:14 | ERROR    | cv_formatter.llm.tagger | Error calling OpenAI after retries: Error code: 401 - {'error': {'message': 'Incorrect API key provided: your_api*****here. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}
+2026-01-21 11:09:16 | INFO     | cv_formatter.llm.tagger | Preparing to send ~187 input tokens to gpt-4o-mini
+2026-01-21 11:09:16 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 401 Unauthorized"
+2026-01-21 11:09:16 | ERROR    | cv_formatter.llm.tagger | Error calling OpenAI after retries: Error code: 401 - {'error': {'message': 'Incorrect API key provided: your_api*****here. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}

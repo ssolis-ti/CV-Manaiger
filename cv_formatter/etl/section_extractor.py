@@ -1,5 +1,8 @@
 import re
 from typing import Dict, List
+from cv_formatter.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 class SectionExtractor:
     """

@@ -1,5 +1,8 @@
 import re
 import unicodedata
+from cv_formatter.utils.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 def clean_text(text: str) -> str:
     """
@@ -12,7 +15,10 @@ def clean_text(text: str) -> str:
         str: Cleaned and normalized text.
     """
     if not text:
+        logger.debug("clean_text received empty input.")
         return ""
+    
+    logger.debug(f"Cleaning text of size {len(text)}")
     
     # --- STAGE 1: UNICODE NORMALIZATION ---
     # Ensures consistent representation of characters (e.g., 'ñ', 'é').

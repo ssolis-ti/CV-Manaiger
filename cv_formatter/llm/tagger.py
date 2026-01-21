@@ -5,10 +5,10 @@ import logging
 from cv_formatter.config import config
 from cv_formatter.formatter.json_formatter import CVData
 from cv_formatter.utils.token_counter import count_tokens, estimate_cost
+from cv_formatter.utils.logging_config import get_logger
 
 # Configure simple logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger(__name__)
 
 class LLMTagger:
     def __init__(self):
