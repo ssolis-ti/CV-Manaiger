@@ -46,92 +46,42 @@ class LLMTagger:
         # We act as an HR Expert. 
         # Crucial instruction: "Adhere strictly to JSON Schema".
         
-        # PROMPT REPOSITORY
+        # PROMPT REPOSITORY (Optimized for 8B)
         PROMPTS = {
             "es": """
-            Eres un asistente experto en RRHH. Tu tarea es extraer información estructurada de un CV.
+            ### ROL: Experto RRHH AI (Estructuración)
+            ### TAREA: Extraer JSON de CV según Schema.
             
-            --- OBJETIVOS ---
-            1. **Extracción**: Identifica hechos claros (Fechas, Empresas, Instituciones).
-               - **Fechas**: Si ves "2023", úsalo. "Presente"/"Actualidad" es la fecha actual.
-               - **ADVERTENCIA**: Las fechas pueden aparecer AL FINAL del bloque de texto. ¡Escanea todo!
-               
-               --- REGLA NO NEGOCIABLE: FECHAS (CRITICO) ---
-               DEBES extraer las fechas de cada experiencia. No las dejes vacías (null).
-               Busca formatos como: "Mes/Año - Actualidad", "2018 - 2019".
-               Si la fecha está en la línea del título (ej: "Google, 2020-2022"), EXTRAELA.
-               
-               *** ESTRATEGIA DE COLUMNAS (IMPORTANTE) ***
-               Si ves una lista de fechas AL FINAL del texto (ej. "Mar 2023... Ene 2020..."),
-               y una lista de roles AL PRINCIPIO, asígnalas SECUENCIALMENTE.
-               (1er Rol -> 1ra Fecha, 2do Rol -> 2da Fecha, etc.)
-               NO ignores los roles solo porque las fechas están lejos.
-               
-               --- NON-NEGOTIABLE RULE: SKILLS ---
-               The 'skills' field is an OBJECT, not a string or list.
-               Structure: { "hard_skills": [...], "soft_skills": [...] }
-               
-            2. **Análisis Profundo (Metadata)**:
-               - **Seniority**: Estima nivel (Junior, Mid, Senior, Lead).
-               - **Estilo**: Tono del CV (Conciso, Verboso, Orientado a la acción).
+            --- REGLAS CRÍTICAS ---
+            1. **FECHAS (OBLIGATORIO)**: Extraer 'start_date' y 'end_date'. 
+               - Ej: "Mar 2023 - Pres" -> start: "2023-03", end: "Present"
+            2. **COLUMNAS**: Si fechas están al final, asignar secuencialmente a cargos arriba.
+            3. **SKILLS**: Objeto con {hard_skills: [], soft_skills: []}.
             
-            3. **Extracción de PERLAS OCULTAS**:
-               - **Hard Skills**: Busca herramientas explícitas.
-               - **Impacto**: Busca métricas numéricas.
-               
-               --- ONE-SHOT EXAMPLE (Ejemplo) ---
-               Input: 
-               "Gerente de TI | Microsoft
-               Responsable de infraestructura global.
-               Ene 2020 - Actualidad" 
-
-               Output (JSON):
-               {
-                 "experience": [
-                   {
-                     "title": "Gerente de TI",
-                     "company": "Microsoft",
-                     "start_date": "2020-01",
-                     "end_date": "Present",
-                     "description": "Responsable de infraestructura global."
-                   }
-                 ]
-               }
+            --- EJEMPLO ---
+            Input: "Gerente TI | Microsoft | Ene 2020 - Pres"
+            Output: {"experience": [{"title": "Gerente TI", "company": "Microsoft", "start_date": "2020-01", "end_date": "Present"}]}
             
-            --- OUTPUT FORMAT ---
-            You MUST adhere strictly to the provided JSON Schema.
+            --- FORMATO ---
+            Obedecer JSON Schema estrictamente. NO añadir texto extra.
             """,
             
             "en": """
-            You are an expert HR AI assistant. Your task is to extract structured information from a CV/Resume.
+            ### ROLE: AI HR Expert (Structuring)
+            ### TASK: Extract JSON from CV per Schema.
             
-            --- OBJECTIVES ---
-            1. **Extraction**: Identify clear facts (Dates, Companies, Schools).
-               - **Dates**: If only "2023" is present, use it. "Present"/"Current" is today.
-               - **WARNING**: Dates might appear at the END of the text block. Scan everything!
-               
-               --- NON-NEGOTIABLE RULE: DATES (CRITICAL) ---
-               You MUST extract dates for every experience entry. Do not leave them null.
-               Look for: "Month/Year - Present", "YYYY - YYYY".
-               If date is in the header line, EXTRACT IT.
-               
-               --- NON-NEGOTIABLE RULE: SKILLS ---
-               The 'skills' field is an OBJECT. Structure: { "hard_skills": [...], "soft_skills": [...] }
-               
-            2. **Deep Analysis (Metadata)**:
-               - **Seniority**: Estimate level (Junior, Mid, Senior).
-               - **Style**: Analyze writing tone.
+            --- CRITICAL RULES ---
+            1. **DATES (MANDATORY)**: Extract 'start_date' and 'end_date'.
+               - e.g. "Jan 2020 - Pres" -> start: "2020-01", end: "Present"
+            2. **COLUMNS**: If dates are at the end, assign sequentially to roles above.
+            3. **SKILLS**: Object {hard_skills: [], soft_skills: []}.
             
-            3. **Hidden Gems**:
-               - **Hard Skills**: explicit tools/techs.
-               - **Impact**: numeric metrics.
-               
-               --- ONE-SHOT EXAMPLE ---
-               Input: "Project Manager | Microsoft | Jan 2020 - Present"
-               Output (JSON): { "experience": [{ "title": "Project Manager", "start_date": "2020-01", "end_date": "Present" }] }
+            --- EXAMPLE ---
+            Input: "Project Manager | Google | Jan 2018 - Dec 2019"
+            Output: {"experience": [{"title": "Project Manager", "company": "Google", "start_date": "2018-01", "end_date": "2019-12"}]}
             
-            --- OUTPUT FORMAT ---
-            You MUST adhere strictly to the provided JSON Schema.
+            --- FORMAT ---
+            Obey JSON Schema strictly. Output ONLY JSON.
             """
         }
         

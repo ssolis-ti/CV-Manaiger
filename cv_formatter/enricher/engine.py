@@ -25,7 +25,7 @@ class EnrichmentService:
             api_key=config.API_KEY_ENRICH,
             base_url=config.OPENAI_BASE_URL
         )
-        self.model = config.MODEL_ENRICH # Gamma 3 (or configured secondary model)
+        self.model = config.MODEL_ENRICH # Now Schematron-8b by default
 
     @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=5, max=30))
     def enrich_cv(self, cv_json: dict, cv_id: str) -> EnrichmentData:
@@ -35,14 +35,10 @@ class EnrichmentService:
         candidate_name = cv_json.get('full_name', 'Unknown')
         logger.info(f"Enriching CV {cv_id} (Candidate: {candidate_name}) using {self.model}...")
         
-        # 0. Deterministic Timeline Analysis (Layer 2.1)
-        # This is calculated locally, NOT by the LLM, to ensure math accuracy.
+        # 0. Deterministic Timeline Analysis
         from cv_formatter.formatter.json_formatter import CVData
         from cv_formatter.enricher.timeline_analyzer import TimelineAnalyzer
         
-        # Re-construct CVData to pass to logic (inefficient? maybe, but robust)
-        # Ideally Facade passes the object, but here we have dict.
-        # Check if caller passed object or dict. Assuming dict.
         try:
              cv_obj = CVData(**cv_json)
              timeline_result = TimelineAnalyzer().analyze(cv_obj)
@@ -51,32 +47,20 @@ class EnrichmentService:
              timeline_result = None
 
         system_prompt = """
-        You are an expert Technical Recruiter and Career Coach.
-        You will receive a CV in JSON format.
+        ### ROL: Coach de Carrera AI
+        ### TAREA: Analizar JSON de CV y generar insights (Enriquecimiento).
         
-        --- CRITICAL INSTRUCTION ---
-        **OUTPUT MUST BE IN SPANISH (ES-LATAM).**
+        --- INSTRUCCIÓN CRÍTICA ---
+        **OUTPUT EN ESPAÑOL (ES-LATAM).**
         
-        --- OBJECTIVES ---
-        1. **Market Signals**:
-           - **TechStack**: Languages, Frameworks, Cloud.
-           - **Tools**: Platforms, Ticket systems.
-           - **Role Fit**: Suggest specific job titles.
+        --- OBJETIVOS ---
+        1. **Market Signals**: Sugerir cargos (Role Fit) y TechStack clave.
+        2. **Signals (SWOT)**: Fortalezas, Debilidades y Riesgos.
+        3. **Growth**: Potencial de crecimiento (High/Medium/Low).
+        4. **CareerPath**: Habilidades faltantes y certificaciones recomendadas.
         
-        2. **Profile Signals (SWOT)**:
-           - **Strengths**: What stands out? (e.g. "Long tenure", "Promotions", "Impact").
-           - **Weaknesses**: What is lacking? (e.g. "No Cloud exp", "Only maintenance roles").
-           - **Risk Flags**: Any huge red flags? (e.g. "Vague descriptions", "Regression in role lists").
-           - **Growth Potential**: High/Medium/Low based on adaptability.
-
-        3. **Coach Feedback (CareerPath)**:
-           - **Missing Skills**: What is missing for the NEXT level?
-           - **Certifications**: Suggest specific certs.
-           - **Tips**: Constructive criticism on the CV content.
-        
-        --- OUTPUT ---
-        Strictly adhere to the `EnrichmentData` JSON schema.
-        Be critical but constructive.
+        --- FORMATO ---
+        Obedecer JSON Schema `EnrichmentData`. Ser crítico pero constructivo.
         """
 
         # Prepare payload
@@ -106,8 +90,6 @@ class EnrichmentService:
             logger.error(f"Enrichment Failed with primary model {self.model}: {e}")
             
             # FALLBACK STRATEGY
-            # If the creative model fails (500, overloaded, etc), try the Structural Model.
-            # It might be less 'creative' but can still fill the schema.
             fallback_model = config.MODEL_STRUCTURE
             if fallback_model and fallback_model != self.model:
                 logger.info(f"⚠ Rerouting enrichment to Fallback Model: {fallback_model}...")
