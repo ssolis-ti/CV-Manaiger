@@ -27,7 +27,7 @@ class EnrichmentService:
         )
         self.model = config.MODEL_ENRICH # Gamma 3 (or configured secondary model)
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=30))
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=5, max=30))
     def enrich_cv(self, cv_json: dict, cv_id: str) -> EnrichmentData:
         """
         Generates insights based on the already-structured CV data.

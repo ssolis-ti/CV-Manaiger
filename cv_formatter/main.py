@@ -129,7 +129,11 @@ class CVProcessor:
             # ---------------------------------------------------------
             # STEP 5: ENRICHMENT (LAYER 2) - GEMMA 3
             # ---------------------------------------------------------
-            logger.info("Step 5: Enriching CV with Insights (Gemma 3)...")
+            # [PATIENCE STRATEGY]: Mandatory 15s delay to avoid API saturation
+            logger.info("Step 5: Waiting 15 seconds (Grace Period) before Enrichment...")
+            time.sleep(15)
+            
+            logger.info("Proceeding with Enrichment (Gemma 3)...")
             from cv_formatter.enricher.engine import EnrichmentService
             enricher = EnrichmentService()
             

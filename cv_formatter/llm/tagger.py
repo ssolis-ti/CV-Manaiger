@@ -31,7 +31,7 @@ class LLMTagger:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=10),
+        wait=wait_exponential(multiplier=2, min=5, max=15),
         retry=retry_if_exception_type(Exception)
     )
     def tag_cv(self, text: str, language: str = "es") -> CVData:
