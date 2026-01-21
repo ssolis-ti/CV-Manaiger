@@ -152,12 +152,16 @@ def main():
             with console.status("[bold green]Procesando CV con Inteligencia Artificial...[/bold green]", spinner="dots"):
                 result = processor.process_cv(raw_text)
             
+            # Result is now a dict { "source_cv": ..., "enrichment": ... }
+            cv_data = result["source_cv"]
+            enrichment_data = result["enrichment"]
+            
             # Generate dynamic filename
             import re
             from datetime import datetime
             
             # Extract candidate name safe for filename
-            raw_name = result.get('full_name', 'Unknown_Candidate')
+            raw_name = cv_data.get('full_name', 'Unknown_Candidate')
             safe_name = re.sub(r'[^a-zA-Z0-9]', '_', raw_name)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
@@ -168,23 +172,31 @@ def main():
             
             base_filename = os.path.join(output_dir, f"CV_{safe_name}_{timestamp}")
             
-            # Save JSON
+            # 1. Save Source JSON (Validation Facts)
             output_json = f"{base_filename}.json"
             with open(output_json, "w", encoding="utf-8") as f:
-                json.dump(result, f, indent=2, ensure_ascii=False)
+                json.dump(cv_data, f, indent=2, ensure_ascii=False)
             
-            # Save Markdown
-            md_output = json_to_markdown(result)
+            # 2. Save Insights JSON (Enrichment) - if available
+            output_insights = f"{base_filename}_INSIGHTS.json"
+            if enrichment_data:
+                with open(output_insights, "w", encoding="utf-8") as f:
+                    json.dump(enrichment_data, f, indent=2, ensure_ascii=False)
+            
+            # 3. Save Markdown (Source CV)
+            md_output = json_to_markdown(cv_data)
             output_md = f"{base_filename}.md"
             with open(output_md, "w", encoding="utf-8") as f:
                 f.write(md_output)
 
             console.print(f"\n[bold green]¡Éxito! Análisis Completado.[/bold green]")
-            console.print(f"[blue]JSON guardado en: {output_json}[/blue]")
-            console.print(f"[blue]Markdown exportado a: {output_md}[/blue]")
+            console.print(f"[blue]JSON Original:[/blue] {output_json}")
+            if enrichment_data:
+                console.print(f"[magenta]INSIGHTS Gemma 3:[/magenta] {output_insights}")
+            console.print(f"[blue]Markdown:[/blue] {output_md}")
             
             console.print(Panel("Vista Previa (Primeras 20 líneas)", expand=False))
-            console.print(JSON.from_data(result))
+            console.print(JSON.from_data(cv_data))
             
             # Ask to continue
             if not Prompt.ask("\n¿Procesar otro CV?", choices=["y", "n"], default="y") == "y":

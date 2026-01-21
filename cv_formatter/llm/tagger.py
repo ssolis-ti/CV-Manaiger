@@ -27,7 +27,7 @@ class LLMTagger:
             api_key=config.OPENAI_API_KEY,
             base_url=config.OPENAI_BASE_URL
         )
-        self.model = config.OPENAI_MODEL
+        self.model = config.MODEL_STRUCTURE
 
     @retry(
         stop=stop_after_attempt(3),

@@ -74,10 +74,28 @@ class CVProcessor:
             logger.info("Step 4: Formatting Final JSON...")
             final_json = format_to_dict(cv_data_obj)
             
+            # ---------------------------------------------------------
+            # STEP 5: ENRICHMENT (LAYER 2) - GEMMA 3
+            # ---------------------------------------------------------
+            logger.info("Step 5: Enriching CV with Insights (Gemma 3)...")
+            from cv_formatter.enricher.engine import EnrichmentService
+            enricher = EnrichmentService()
+            
+            # We generate a CV_ID if not present (though our Schema has UUIDs now)
+            # We use 0th experience ID as proxy or generate new if empty list
+            cv_id = "cv_root_" + (final_json['experience'][0]['id'] if final_json['experience'] else "unknown")
+            
+            enrichment_obj = enricher.enrich_cv(final_json, cv_id)
+            enrichment_json = enrichment_obj.model_dump(exclude_none=True) if enrichment_obj else None
+            
             elapsed = time.time() - start_time
             logger.info(f"Pipeline Completed Successfully in {elapsed:.2f}s.")
             
-            return final_json
+            # Return TWIN-JSON Structure
+            return {
+                "source_cv": final_json,
+                "enrichment": enrichment_json
+            }
             
         except Exception as e:
             logger.error(f"Pipeline Failed: {e}")
