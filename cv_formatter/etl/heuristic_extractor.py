@@ -18,30 +18,28 @@ class HeuristicExtractor:
     )
     
     def extract(self, text: str) -> CVData:
+        from cv_formatter.utils.date_normalizer import DateNormalizer
         lines = [line.strip() for line in text.split('\n') if line.strip()]
         
-        # Phase 1: Identify all dates and Role Candidates
-        dates = []
-        chunks = [] # List of { "header": str, "description": List[str] }
+        # Structure: List of { "header": str, "description": List[str] }
+        chunks = []
         lead_in = []
-        
         current_chunk = None
         
-        # Exclusion keywords to avoid picking Resumen/Skills as a role
         EXCLUDE = ["RESUMEN", "HABILIDADES", "IDIOMAS", "OTROS", "EDUCACIÓN", "CERTIFICACIONES", "COMPETENCIAS"]
 
+        # Phase 1: Chunking with content preservation
         for line in lines:
-            # 1. Is it a date?
-            if self.DATE_REGEX.search(line):
-                dates.append(line)
-                continue
-            
-            # 2. Is it a potential Role Header?
-            # Heuristic: Not a bullet, reasonable length, not in exclude list
+            # Heuristic for Role Header: Not a bullet, mid-length, not excluded
             is_bullet = line.startswith(('-', '*', '•', '+'))
-            is_header = not is_bullet and 5 < len(line) < 120 and not any(x in line.upper() for x in EXCLUDE)
+            is_header = not is_bullet and 6 < len(line) < 110 and not any(x in line.upper() for x in EXCLUDE)
             
-            if is_header:
+            # Additional signal: Does it contain a date?
+            has_date = self.DATE_REGEX.search(line) is not None
+
+            if is_header or has_date:
+                # If we have a date but line is long, it might be a role with date (Good!)
+                # If we have a date and it's a short line, it's a "Footer Date" (Anchor)
                 if current_chunk:
                     chunks.append(current_chunk)
                 current_chunk = {"header": line, "description": []}
@@ -53,40 +51,46 @@ class HeuristicExtractor:
         
         if current_chunk:
             chunks.append(current_chunk)
-            
-        # Phase 3: Zipping with Footer Dates
-        # We assume the user's rule: Roles appear first, Dates appear later/Footer.
-        # We zip them by index.
+
+        # Phase 2: Proximity-based Date Extraction
         experience = []
-        limit = min(len(chunks), len(dates))
+        normalized_dates = []
+        # Find all dates in doc for global fallback
+        all_raw_dates = self.DATE_REGEX.findall(text)
         
-        for i in range(limit):
-            chunk = chunks[i]
-            date_str = dates[i]
-            
+        for chunk in chunks:
             header = chunk["header"]
-            desc = "\n".join(chunk["description"])
+            desc_lines = chunk["description"]
             
-            # Robust split for "Company, Role" or "Company | Role" or "Company - Role"
-            # We try common separators
-            parts = re.split(r'[,|@–-]', header, 1)
+            # 1. Check same line (Header)
+            start_date, end_date = DateNormalizer.extract_range(header)
+            
+            # 2. Check next line of description if header had no date
+            if start_date == "Unknown" and desc_lines:
+                start_date, end_date = DateNormalizer.extract_range(desc_lines[0])
+            
+            # 3. Clean Header of Date Noise for Title/Company
+            clean_header = self.DATE_REGEX.sub("", header).strip()
+            
+            # Split "Company, Role"
+            parts = re.split(r'[,|@–-]', clean_header, 1)
             if len(parts) > 1:
                 company = parts[0].strip()
                 title = parts[1].strip()
             else:
                 company = "Unknown Company"
-                title = header.strip()
+                title = clean_header
 
             experience.append(ExperienceEntry(
                 title=title or "Position (Recovered)",
                 company=company or "Unknown Company",
-                start_date=date_str, 
-                end_date="Check Timeline",
-                description=desc if desc else header
+                start_date=start_date if start_date != "Unknown" else None, 
+                end_date=end_date if end_date != "Unknown" else None,
+                description="\n".join(desc_lines) if desc_lines else clean_header
             ))
             
         return CVData(
             full_name=lead_in[0] if lead_in else "Candidate (Recovered)",
-            summary="\n".join(lead_in[1:4]) if len(lead_in) > 1 else "Extracted via Resilient Chunking",
+            summary="\n".join(lead_in[1:4]) if len(lead_in) > 1 else "Extracted via Proximity-Logic Heuristic",
             experience=experience
         )

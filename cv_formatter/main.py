@@ -119,6 +119,10 @@ class CVProcessor:
             cv_data_obj.ats_analysis = ats_result
             cv_data_obj.raw_text = raw_text
             
+            # [CHRONOLOGY]: Ensure latest roles appear first
+            from cv_formatter.utils.timeline_sorter import TimelineSorter
+            cv_data_obj = TimelineSorter.sort(cv_data_obj)
+            
             # ---------------------------------------------------------
             # STEP 4: FORMATTER - OUTPUT
             # ---------------------------------------------------------
