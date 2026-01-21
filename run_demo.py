@@ -168,7 +168,10 @@ def main():
             
             # Extract candidate name safe for filename
             raw_name = cv_data.get('full_name', 'Unknown_Candidate')
-            safe_name = re.sub(r'[^a-zA-Z0-9]', '_', raw_name)
+            # 1. Replace one or more spaces with a SINGLE underscore
+            safe_name = re.sub(r'\s+', '_', raw_name.strip())
+            # 2. Remove any remaining non-alphanumeric chars (except underscore and dash)
+            safe_name = re.sub(r'[^a-zA-Z0-9_-]', '', safe_name)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             
             # Ensure output directory exists
