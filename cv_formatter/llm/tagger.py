@@ -55,8 +55,9 @@ class LLMTagger:
             --- REGLAS CRÍTICAS ---
             1. **FECHAS (OBLIGATORIO)**: Extraer 'start_date' y 'end_date'. 
                - Ej: "Mar 2023 - Pres" -> start: "2023-03", end: "Present"
-            2. **COLUMNAS**: Si fechas están al final, asignar secuencialmente a cargos arriba.
-            3. **SKILLS**: Objeto con {hard_skills: [], soft_skills: []}.
+            2. **ESTRATEGIA FOOTER (IMPORTANTE)**: Si ves una lista de fechas AL FINAL de la sección, asígnalas SECUENCIALMENTE a los cargos de arriba. (1er cargo -> 1ra fecha).
+            3. **COLUMNAS**: Ignorar si el diseño es en columnas; extraer el texto completo.
+            4. **SKILLS**: Objeto con {hard_skills: [], soft_skills: []}.
             
             --- EJEMPLO ---
             Input: "Gerente TI | Microsoft | Ene 2020 - Pres"

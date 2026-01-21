@@ -115,8 +115,9 @@ class CVProcessor:
                     cv_data_obj.experience = fallback_data.experience
                     cv_data_obj.full_name = cv_data_obj.full_name or fallback_data.full_name
             
-            # [INJECTION]: Attach ATS Result to the Object
+            # [INJECTION]: Attach ATS Result and Raw Text to the Object
             cv_data_obj.ats_analysis = ats_result
+            cv_data_obj.raw_text = raw_text
             
             # ---------------------------------------------------------
             # STEP 4: FORMATTER - OUTPUT
