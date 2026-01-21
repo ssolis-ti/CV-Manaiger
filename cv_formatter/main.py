@@ -115,7 +115,10 @@ class CVProcessor:
             enrichment_json = enrichment_obj.model_dump(exclude_none=True) if enrichment_obj else None
             
             elapsed = time.time() - start_time
-            logger.info(f"Pipeline Completed Successfully in {elapsed:.2f}s.")
+            if enrichment_json:
+                logger.info(f"Pipeline Completed Successfully in {elapsed:.2f}s.")
+            else:
+                logger.warning(f"Pipeline Completed (Enrichment Result Unavailable) in {elapsed:.2f}s.")
             
             # Return TWIN-JSON Structure
             return {

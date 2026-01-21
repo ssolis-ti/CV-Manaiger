@@ -27,7 +27,7 @@ class EnrichmentService:
         )
         self.model = config.MODEL_ENRICH # Gamma 3 (or configured secondary model)
 
-    @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=1, min=1, max=5))
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=4, max=30))
     def enrich_cv(self, cv_json: dict, cv_id: str) -> EnrichmentData:
         """
         Generates insights based on the already-structured CV data.
@@ -103,6 +103,31 @@ class EnrichmentService:
             return result
 
         except Exception as e:
-            logger.error(f"Enrichment Failed: {e}")
-            # Fail soft: Return None implies "No Insights Available"
+            logger.error(f"Enrichment Failed with primary model {self.model}: {e}")
+            
+            # FALLBACK STRATEGY
+            # If the creative model fails (500, overloaded, etc), try the Structural Model.
+            # It might be less 'creative' but can still fill the schema.
+            fallback_model = config.MODEL_STRUCTURE
+            if fallback_model and fallback_model != self.model:
+                logger.info(f"⚠ Rerouting enrichment to Fallback Model: {fallback_model}...")
+                try:
+                    completion = self.client.beta.chat.completions.parse(
+                        model=fallback_model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": f"Analyze this CV JSON:\n{clean_json_str}"}
+                        ],
+                        response_format=EnrichmentData,
+                    )
+                    result = completion.choices[0].message.parsed
+                    result.target_cv_id = cv_id
+                    if timeline_result:
+                        result.timeline_analysis = timeline_result
+                    
+                    logger.info("Fallback Enrichment Successful.")
+                    return result
+                except Exception as fallback_err:
+                    logger.error(f"Fallback model also failed: {fallback_err}")
+            
             return None
