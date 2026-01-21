@@ -1,18 +1,31 @@
 from openai import OpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+import logging
+
 from cv_formatter.config import config
 from cv_formatter.formatter.json_formatter import CVData
+from cv_formatter.utils.token_counter import count_tokens, estimate_cost
+
+# Configure simple logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class LLMTagger:
     def __init__(self):
         self.client = OpenAI(api_key=config.OPENAI_API_KEY)
         self.model = config.OPENAI_MODEL
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(Exception)
+    )
     def tag_cv(self, text: str) -> CVData:
         """
         Uses OpenAI to analyze the raw (or cleaned) text and extract structured data.
+        Includes Retries and Token Logging.
         """
         if not text:
-            # Return empty structure if no text
             return CVData(full_name="Unknown", summary="No content provided")
 
         system_prompt = """
@@ -33,11 +46,14 @@ class LLMTagger:
         You MUST adhere strictly to the provided JSON Schema.
         If a field is ambiguous, prefer null. Do not hallucinate data not present in text.
         """
+        
+        # 1. OPTIMIZATION: Count Tokens before sending
+        # This helps in preventing Context Window errors.
+        input_tokens_est = count_tokens(system_prompt + text, self.model)
+        logger.info(f"Preparing to send ~{input_tokens_est} input tokens to {self.model}")
 
         try:
             # CALL TO OPENAI
-            # We use 'response_format' with Pydantic to guarantee valid JSON.
-            # This is the Core of the "LLM Friendly" strategy.
             completion = self.client.beta.chat.completions.parse(
                 model=self.model,
                 messages=[
@@ -48,12 +64,19 @@ class LLMTagger:
             )
             
             result = completion.choices[0].message.parsed
+            
+            # 2. OPTIMIZATION: Log Usage for Cost Analysis
+            usage = completion.usage
+            if usage:
+                cost = estimate_cost(usage.prompt_tokens, usage.completion_tokens, self.model)
+                logger.info(f"OpenAI Usage: {usage.total_tokens} tokens (In: {usage.prompt_tokens}, Out: {usage.completion_tokens}). Est. Cost: ${cost:.6f}")
+            
             return result
             
         except Exception as e:
-            print(f"Error calling OpenAI: {e}")
-            # Return a partial/empty object to avoid crash, or re-raise
-            return CVData(full_name="Error Parsing", summary=f"Failed to process CV: {str(e)}")
+            logger.error(f"Error calling OpenAI after retries: {e}")
+            # Raise so Facade can handle it or let it crash depending on policy
+            raise e
 
 def tag_cv(text: str) -> CVData:
     tagger = LLMTagger()
