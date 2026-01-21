@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 class LLMTagger:
     def __init__(self):
         self.client = OpenAI(
-            api_key=config.OPENAI_API_KEY,
+            api_key=config.API_KEY_STRUCTURE,
             base_url=config.OPENAI_BASE_URL
         )
         self.model = config.MODEL_STRUCTURE
