@@ -13,6 +13,8 @@ import re
 import unicodedata
 from cv_formatter.utils.logging_config import get_logger
 
+logger = get_logger(__name__)
+
 def clean_text(text: str) -> str:
     """
     Normalizes and cleans the input text to ensure consistent processing.

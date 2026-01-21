@@ -57,14 +57,21 @@ def json_to_markdown(data: dict) -> str:
     return md
 
 def get_manual_input(console):
-    console.print("\n[yellow]Pega el texto de tu CV abajo.[/yellow]")
-    console.print("[dim]Escribe [bold white]FIN[/bold white] en una línea nueva y presiona Enter para procesar:[/dim]")
+    console.print(Panel(
+        "[yellow]INSTRUCCIONES:[/yellow]\n"
+        "1. Copia el texto de tu CV.\n"
+        "2. Pégalo aquí abajo (puede ocupar muchas líneas).\n"
+        "3. Cuando termines, escribe [bold white]FIN[/bold white] en una línea nueva y presiona Enter.",
+        title="Entrada Manual",
+        border_style="blue"
+    ))
     
-    lines = []
+    cv_lines = []
+    line_count = 0
     try:
         while True:
             try:
-                line = input()
+                line = console.input(f"[dim]Línea {line_count+1}:[/dim] ")
             except EOFError:
                 break
             
