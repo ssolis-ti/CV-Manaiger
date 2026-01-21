@@ -55,6 +55,8 @@ class LLMTagger:
         
         --- OBJECTIVES ---
         1. **Extraction**: Identify clear facts (Dates, Companies, Schools).
+           - **Smart Parsing**: If Company and Title are on the same line (e.g. "Google, Senior Dev"), split them. 
+           - **Dates**: If only "2023" is present, use it. If "Present" or "Actualidad", treat as current.
         2. **Deep Analysis (Metadata)**:
            - **Seniority**: Estimate level based on years and titles (Junior, Mid, Senior, Lead, Executive).
            - **Style**: Analyze writing tone (Concise, Verbose, Action-oriented, Passive).

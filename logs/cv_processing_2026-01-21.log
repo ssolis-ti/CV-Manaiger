@@ -133,3 +133,63 @@
 2026-01-21 12:40:23 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 837 tokens (In: 739, Out: 98). Est. Cost: $0.000170
 2026-01-21 12:40:23 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
 2026-01-21 12:40:23 | INFO     | cv_formatter.main    | Pipeline Completed Successfully in 3.36s.
+2026-01-21 12:40:31 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 12:40:36 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 12:40:36 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 12:40:36 | INFO     | cv_formatter.main    | Sections found: ['header_info', 'experience', 'education', 'certifications', 'skills']
+2026-01-21 12:40:36 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis...
+2026-01-21 12:40:37 | INFO     | cv_formatter.llm.tagger | Preparing to send ~1514 input tokens to inference-net/schematron-8b
+2026-01-21 12:40:57 | INFO     | httpx                | HTTP Request: POST https://api.inference.net/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 12:40:57 | ERROR    | cv_formatter.llm.tagger | Error calling OpenAI after retries: 5 validation errors for CVData
+experience.0.title
+  Field required [type=missing, input_value={'company': 'SOC Opazo y ...'Mar 2023 – Ago 2025'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.1.title
+  Field required [type=missing, input_value={'company': 'Planeta Woo ...'Ene 2020 – Dic 2022'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.2.title
+  Field required [type=missing, input_value={'company': 'Municipalida...'Jun 2019 – Dic 2019'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.3.title
+  Field required [type=missing, input_value={'company': 'Dimacofi', '...Feb 2019 – Mayo 2019'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.4.title
+  Field required [type=missing, input_value={'company': 'Axioma Integ...'Mar 2015 – Feb 2018'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+2026-01-21 12:40:59 | INFO     | cv_formatter.llm.tagger | Preparing to send ~1514 input tokens to inference-net/schematron-8b
+2026-01-21 12:41:18 | INFO     | httpx                | HTTP Request: POST https://api.inference.net/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 12:41:18 | ERROR    | cv_formatter.llm.tagger | Error calling OpenAI after retries: 5 validation errors for CVData
+experience.0.title
+  Field required [type=missing, input_value={'company': 'SOC Opazo y ...'Mar 2023 – Ago 2025'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.1.title
+  Field required [type=missing, input_value={'company': 'Planeta Woo ...'Ene 2020 – Dic 2022'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.2.title
+  Field required [type=missing, input_value={'company': 'Municipalida...'Jun 2019 – Dic 2019'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.3.title
+  Field required [type=missing, input_value={'company': 'Dimacofi', '...Feb 2019 – Mayo 2019'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.4.title
+  Field required [type=missing, input_value={'company': 'Axioma Integ...'Mar 2015 – Feb 2018'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+2026-01-21 12:41:20 | INFO     | cv_formatter.llm.tagger | Preparing to send ~1514 input tokens to inference-net/schematron-8b
+2026-01-21 12:41:39 | INFO     | httpx                | HTTP Request: POST https://api.inference.net/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 12:41:39 | ERROR    | cv_formatter.llm.tagger | Error calling OpenAI after retries: 5 validation errors for CVData
+experience.0.title
+  Field required [type=missing, input_value={'company': 'SOC Opazo y ...'Mar 2023 – Ago 2025'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.1.title
+  Field required [type=missing, input_value={'company': 'Planeta Woo ...'Ene 2020 – Dic 2022'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.2.title
+  Field required [type=missing, input_value={'company': 'Municipalida...'Jun 2019 – Dic 2019'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.3.title
+  Field required [type=missing, input_value={'company': 'Dimacofi', '...Feb 2019 – Mayo 2019'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+experience.4.title
+  Field required [type=missing, input_value={'company': 'Axioma Integ...'Mar 2015 – Feb 2018'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+2026-01-21 12:41:39 | ERROR    | cv_formatter.main    | Pipeline Failed: RetryError[<Future at 0x16d121365d0 state=finished raised ValidationError>]
