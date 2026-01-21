@@ -104,19 +104,19 @@ The system follows a modular **Facade Pattern**.
 
 ```mermaid
 graph TD
-    User([User / CLI]) --> Facade[CVProcessor (Main)]
-    Facade --> ETL_Clean[Cleaner (Regex)]
-    Facade --> ETL_Split[Extractor (Heuristics)]
-    Facade --> Brain[LLMTagger (AI)]
-    Facade --> Format[JSON Formatter (Pydantic)]
+    User(["User / CLI"]) --> Facade["CVProcessor (Main)"]
+    Facade --> ETL_Clean["Cleaner (Regex)"]
+    Facade --> ETL_Split["Extractor (Heuristics)"]
+    Facade --> Brain["LLMTagger (AI)"]
+    Facade --> Format["JSON Formatter (Pydantic)"]
     
     ETL_Clean --> ETL_Split
     ETL_Split --> Brain
     Brain -->|Draft Data| Format
-    Format -->|Valid JSON| Output[(Files)]
+    Format -->|Valid JSON| Output[("Files")]
     
     subgraph Observability
-    Logger[Rich Logger] -.-> Facade
+    Logger["Rich Logger"] -.-> Facade
     end
 ```
 
