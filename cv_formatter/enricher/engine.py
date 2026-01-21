@@ -32,7 +32,8 @@ class EnrichmentService:
         """
         Generates insights based on the already-structured CV data.
         """
-        logger.info(f"Enriching CV {cv_id} using {self.model}...")
+        candidate_name = cv_json.get('full_name', 'Unknown')
+        logger.info(f"Enriching CV {cv_id} (Candidate: {candidate_name}) using {self.model}...")
         
         # We send the JSON string to save tokens (no need to re-parse raw text)
         clean_json_str = json.dumps(cv_json, ensure_ascii=False)
