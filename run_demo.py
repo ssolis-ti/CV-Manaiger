@@ -1,3 +1,13 @@
+"""
+[MODULE: INTERFACE / PRESENTATION]
+Role: The 'Frontend' (CLI).
+Responsibility: Handle user input, display feedback, and execute the pipeline via the Facade.
+Flow: User Interaction (Menu) -> CVProcessor -> Visual Feedback (Rich) -> Output Files.
+Logic:
+- Uses 'rich' library for a Premium CLI experience (Spinners, Colors, Panels).
+- Implements Clipboard integration ('pyperclip') for seamless UX.
+- Handles local file I/O (saving JSON/Markdown).
+"""
 import sys
 import os
 import json
@@ -13,6 +23,38 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from cv_formatter.main import CVProcessor
 from cv_formatter.utils.logging_config import setup_logging
+
+def json_to_markdown(data: dict) -> str:
+    """Converts the CV JSON into a clean Markdown representation."""
+    md = f"# {data.get('full_name', 'Unknown Candidate')}\n\n"
+    
+    # Metadata Badge
+    meta = data.get('metadata', {})
+    md += f"> **Seniority:** {meta.get('seniority', 'N/A')} | **Style:** {meta.get('writing_style', 'N/A')}\n"
+    md += f"> **AI Summary:** *{meta.get('llm_summary', '')}*\n\n"
+    
+    # Summary
+    if data.get('summary'):
+        md += f"## Profile\n{data['summary']}\n\n"
+        
+    # Experience
+    if data.get('experience'):
+        md += "## Experience\n"
+        for exp in data['experience']:
+            md += f"### {exp.get('title')} @ {exp.get('company')}\n"
+            md += f"*{exp.get('start_date')} - {exp.get('end_date')}*\n\n"
+            md += f"{exp.get('description')}\n"
+            if exp.get('impact_metrics'):
+                md += "**Impact:** " + ", ".join(exp['impact_metrics']) + "\n"
+            md += "\n"
+            
+    # Education
+    if data.get('education'):
+        md += "## Education\n"
+        for edu in data['education']:
+            md += f"- **{edu.get('degree')}**, {edu.get('institution')} ({edu.get('year')})\n"
+    
+    return md
 
 def get_manual_input(console):
     console.print("\n[yellow]Pega el texto de tu CV abajo.[/yellow]")
@@ -95,13 +137,21 @@ def main():
             with console.status("[bold green]Procesando CV con Inteligencia Artificial...[/bold green]", spinner="dots"):
                 result = processor.process_cv(raw_text)
             
-            # Save to file
+            # Save JSON
             output_file = "cv_output.json"
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
-                
+            
+            # Save Markdown
+            md_output = json_to_markdown(result)
+            md_file = "cv_export.md"
+            with open(md_file, "w", encoding="utf-8") as f:
+                f.write(md_output)
+
             console.print(f"\n[bold green]¡Éxito! Análisis Completado.[/bold green]")
             console.print(f"[blue]JSON guardado en: {output_file}[/blue]")
+            console.print(f"[blue]Markdown exportado a: {md_file}[/blue]")
+            
             console.print(Panel("Vista Previa (Primeras 20 líneas)", expand=False))
             console.print(JSON.from_data(result))
             

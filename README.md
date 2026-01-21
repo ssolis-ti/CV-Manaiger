@@ -82,6 +82,27 @@ python run_demo.py
 
 Para los curiosos, así está organizado el "cerebro":
 
+## Architecture 🏗️
+The system follows a modular **Facade Pattern**, "The 7 Laws" compliant.
+
+```mermaid
+graph TD
+    User([User / CLI]) --> Facade[CVProcessor (Main)]
+    Facade --> ETL_Clean[Cleaner (Regex)]
+    Facade --> ETL_Split[Extractor (Heuristics)]
+    Facade --> Brain[LLMTagger (AI)]
+    Facade --> Format[JSON Formatter (Pydantic)]
+    
+    ETL_Clean --> ETL_Split
+    ETL_Split --> Brain
+    Brain -->|Draft Data| Format
+    Format -->|Valid JSON| Output[(Files)]
+    
+    subgraph Observability
+    Logger[Rich Logger] -.-> Facade
+    end
+```
+
 *   `cv_formatter/main.py`: **El Jefe (Facade)**. Conecta todas las piezas. Si vas a usar esto en tu código, importa la clase `CVProcessor` de aquí.
 *   `cv_formatter/etl/`: **Limpieza**. Se encarga de quitar basura y normalizar el texto antes de que la IA lo toque.
 *   `cv_formatter/llm/`: **Inteligencia**. Aquí vive el `tagger.py` que habla con OpenAI. Incluye reintentos automáticos y control de costos.

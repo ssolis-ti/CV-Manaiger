@@ -1,6 +1,12 @@
 {
-  "full_name": "Oscar Menu Test",
+  "full_name": "",
   "summary": "",
+  "metadata": {
+    "seniority": "",
+    "writing_style": "",
+    "llm_summary": "",
+    "tags_hidden": []
+  },
   "experience": [],
   "education": [],
   "skills": {
@@ -8,5 +14,5 @@
     "soft_skills": []
   },
   "languages": [],
-  "raw_text": "Oscar Menu Test"
+  "raw_text": "inference-net/schematron-8b"
 }

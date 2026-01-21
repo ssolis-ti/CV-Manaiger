@@ -1,3 +1,14 @@
+"""
+[MODULE: ARTIFICIAL INTELLIGENCE]
+Role: The 'Brain'.
+Responsibility: Interface with external LLM APIs to interpret text.
+Flow: Text -> System Prompt + User Data -> API Call (OpenAI/Inference.net) -> Structured Object.
+Logic:
+- 'Prompt Engineering': Acts as an HR Expert. 
+- 'Resilience': Uses 'tenacity' for retry logic (Backoff) to handle 429/5xx errors.
+- 'Observability': Logs token usage and cost per call.
+Warning: Latency is dependent on the external API. Cost scales with input size.
+"""
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 import logging
@@ -12,7 +23,10 @@ logger = get_logger(__name__)
 
 class LLMTagger:
     def __init__(self):
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY)
+        self.client = OpenAI(
+            api_key=config.OPENAI_API_KEY,
+            base_url=config.OPENAI_BASE_URL
+        )
         self.model = config.OPENAI_MODEL
 
     @retry(
@@ -41,7 +55,12 @@ class LLMTagger:
         
         --- OBJECTIVES ---
         1. **Extraction**: Identify clear facts (Dates, Companies, Schools).
-        2. **Inference (Tagging)**:
+        2. **Deep Analysis (Metadata)**:
+           - **Seniority**: Estimate level based on years and titles (Junior, Mid, Senior, Lead, Executive).
+           - **Style**: Analyze writing tone (Concise, Verbose, Action-oriented, Passive).
+           - **LLM Summary**: Write a cryptic, internal-use summary for a Recruiter (e.g. "Strong Java dev but short tenures").
+           - **Hidden Tags**: Add tags like 'job_hopper', 'gap_year', 'high_growth', 'faang' if detected.
+        3. **Inference (Tagging)**:
            - Look at 'Description' fields. Infer **Hard Skills** used in that specific role.
            - Quantify **Impact**: Look for numbers (%, $, increase, reduction) and extract them as 'impact_metrics'.
            - Classify global skills into Hard vs Soft.

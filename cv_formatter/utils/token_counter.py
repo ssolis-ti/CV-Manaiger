@@ -1,4 +1,15 @@
+"""
+[MODULE: OPTIMIZATION]
+Role: Cost & Efficiency Guard.
+Responsibility: Estimate token usage before calling expensive APIs.
+Flow: Text -> Encoding (Tiktoken) -> Integer Count -> Cost Estimation.
+Logic:
+- Uses 'tiktoken' to replicate GPT/LLM tokenization rules locally.
+- Provides 'estimate_cost' based on configurable pricing (defaulting to GPT-4o-mini rates).
+Warning: Pricing is hardcoded ($0.15/$0.60 per 1M). outcomes may vary if model changes.
+"""
 import tiktoken
+import logging
 
 def count_tokens(text: str, model: str = "gpt-4o") -> int:
     """

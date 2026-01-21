@@ -1,3 +1,13 @@
+"""
+[MODULE: STRUCTURE ANALYSIS]
+Role: The 'Surgeon'.
+Responsibility: cut the CV into logical blocks (Experience, Education, Skills) to reduce LLM context load.
+Flow: Cleaned Text -> Keyword Heuristics -> Dictionary <SectionName, TextBlock>.
+Logic:
+- Uses a dictionary of robust keywords (ES/EN) to detect headers.
+- 'Heuristic Fallback': If it fails to split cleanly, it returns the whole text as 'raw_content' to be safe.
+Warning: This is a Non-AI approach. Creative CVs with unique headers might NOT be split correctly, relying on the LLM to process the bulk 'raw_content'.
+"""
 import re
 from typing import Dict, List
 from cv_formatter.utils.logging_config import get_logger

@@ -1,8 +1,17 @@
+"""
+[MODULE: DATA INGESTION / CLEANING]
+Role: The 'Janitor'.
+Responsibility: Normalize chaotic user input into a standard format.
+Flow: Raw String -> Unicode Fixes -> Regex Replacements -> Normalized String.
+Logic:
+- Normalization (NFKC): Solves 'ñ' vs 'n~' issues.
+- Artifact Removal: Maps 10+ types of 'bullet points' (•, ➤, etc.) to a standard dash '-'.
+- Whitespace Collapse: Reduces visual noise while preserving structural newlines.
+Warning: Aggressive regex might strip intent if not careful. Current set is conservative.
+"""
 import re
 import unicodedata
 from cv_formatter.utils.logging_config import get_logger
-
-logger = get_logger(__name__)
 
 def clean_text(text: str) -> str:
     """

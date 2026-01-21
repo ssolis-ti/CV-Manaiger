@@ -1,3 +1,13 @@
+"""
+[MODULE: DATA CONTRACT / SCHEMA]
+Role: The 'Rulebook'.
+Responsibility: Define strict types for the output using Pydantic.
+Flow: LLM JSON Output -> Pydantic Validation -> Safe Dict -> Frontend/API.
+Logic:
+- Uses Pydantic V2 'BaseModel' for high-performance validation.
+- Fields are strongly typed (List[str], Optional[str]) to prevent NullPointerExceptions later.
+- 'AnalysisMetadata' section isolates AI inferences (opinion) from facts (Experience/Education).
+"""
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -21,6 +31,12 @@ class SkillSection(BaseModel):
     hard_skills: List[str] = Field(default_factory=list, description="Technical skills")
     soft_skills: List[str] = Field(default_factory=list, description="Soft skills / competencies")
 
+class AnalysisMetadata(BaseModel):
+    seniority: str = Field(..., description="Estimated seniority level (Junior, Mid, Senior, Lead, Executive)")
+    writing_style: str = Field(..., description="Tone and style of the CV (e.g., Action-oriented, Passive, Academic)")
+    llm_summary: str = Field(..., description="A short AI-generated critique or summary of the candidate's profile")
+    tags_hidden: List[str] = Field(default_factory=list, description="Internal tags for filtering (e.g., 'high_potential', 'job_hopper')")
+
 class CVData(BaseModel):
     full_name: str = Field(..., description="Candidate's full name")
     email: Optional[str] = None
@@ -28,6 +44,9 @@ class CVData(BaseModel):
     linkedin: Optional[str] = None
     location: Optional[str] = None
     summary: str = Field("", description="Professional summary/profile")
+    
+    # Metadata / Analysis (New Section)
+    metadata: AnalysisMetadata = Field(..., description="AI-inferred analysis of the candidate")
     
     experience: List[ExperienceEntry] = Field(default_factory=list)
     education: List[EducationEntry] = Field(default_factory=list)

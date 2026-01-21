@@ -1,3 +1,14 @@
+"""
+[MODULE: OBSERVABILITY]
+Role: Centralized Logging Service.
+Responsibility: Configure how and where the application "speaks" about its internal state.
+Flow: Application -> get_logger() -> Handlers (Console/File) -> Output.
+Design Logic:
+- Idempotency: Checks if handlers exist to avoid double-logging.
+- Dual Output: 
+    1. RichHandler (Console): For Developer Experience (DX) and immediate feedback.
+    2. FileHandler (Disk): For Audit Trails and post-mortem debugging.
+"""
 import logging
 import sys
 import os
