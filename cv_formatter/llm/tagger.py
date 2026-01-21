@@ -61,7 +61,9 @@ class LLMTagger:
            - **Seniority**: Estimate level based on years and titles (Junior, Mid, Senior, Lead, Executive).
            - **Style**: Analyze writing tone (Concise, Verbose, Action-oriented, Passive).
            - **LLM Summary**: Write a cryptic, internal-use summary for a Recruiter (e.g. "Strong Java dev but short tenures").
-           - **Hidden Tags**: Add tags like 'job_hopper', 'gap_year', 'high_growth', 'faang' if detected.
+           - **Analysis (Tags)**:
+             - **Risk Flags**: 'Job Hopping' (many short roles), 'Gaps' (>6 months), 'Vague Descriptions'.
+             - **Strength Signals**: 'Fast Promotions', 'FAANG/BigTech', 'Leadership', 'High Impact Metrics'.
         3. **Inference (Tagging)**:
            - Look at 'Description' fields. Infer **Hard Skills** used in that specific role.
            - Quantify **Impact**: Look for numbers (%, $, increase, reduction) and extract them as 'impact_metrics'.

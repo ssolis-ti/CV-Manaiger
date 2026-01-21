@@ -8,10 +8,10 @@ Logic:
 - Fields are strongly typed (List[str], Optional[str]) to prevent NullPointerExceptions later.
 - 'AnalysisMetadata' section isolates AI inferences (opinion) from facts (Experience/Education).
 """
-from typing import List, Optional
-from pydantic import BaseModel, Field
+import uuid
 
 class ExperienceEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Internal unique ID")
     title: Optional[str] = Field(None, description="Job title")
     company: Optional[str] = Field(None, description="Company name")
     start_date: Optional[str] = Field(None, description="Start date (YYYY-MM or string)")
@@ -23,6 +23,7 @@ class ExperienceEntry(BaseModel):
     impact_metrics: List[str] = Field(default_factory=list, description="Quantifiable metrics/impact extracted from description")
 
 class EducationEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Internal unique ID")
     degree: Optional[str] = Field(None, description="Degree or certification name")
     institution: Optional[str] = Field(None, description="University or Institution")
     year: Optional[str] = Field(None, description="Year of graduation or period")
@@ -35,7 +36,10 @@ class AnalysisMetadata(BaseModel):
     seniority: Optional[str] = Field(None, description="Estimated seniority level (Junior, Mid, Senior, Lead, Executive)")
     writing_style: Optional[str] = Field(None, description="Tone and style of the CV (e.g., Action-oriented, Passive, Academic)")
     llm_summary: Optional[str] = Field(None, description="A short AI-generated critique or summary of the candidate's profile")
-    tags_hidden: List[str] = Field(default_factory=list, description="Internal tags for filtering (e.g., 'high_potential', 'job_hopper')")
+    
+    # Split Analysis (Risk vs Strength)
+    risk_flags: List[str] = Field(default_factory=list, description="Negative indicators (e.g. 'Job Hopper', 'Employment Gaps')")
+    strength_signals: List[str] = Field(default_factory=list, description="Positive indicators (e.g. 'Promotion', 'High Impact', 'Prestigous Company')")
 
 class CVData(BaseModel):
     full_name: Optional[str] = Field(None, description="Candidate's full name")

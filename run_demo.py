@@ -31,7 +31,15 @@ def json_to_markdown(data: dict) -> str:
     # Metadata Badge
     meta = data.get('metadata', {})
     md += f"> **Seniority:** {meta.get('seniority', 'N/A')} | **Style:** {meta.get('writing_style', 'N/A')}\n"
-    md += f"> **AI Summary:** *{meta.get('llm_summary', '')}*\n\n"
+    md += f"> **AI Summary:** *{meta.get('llm_summary', '')}*\n"
+    
+    # Signals
+    if meta.get('strength_signals'):
+        md += f"> ✅ **Strengths:** {', '.join(meta['strength_signals'])}\n"
+    if meta.get('risk_flags'):
+        md += f"> ⚠️ **Risks:** {', '.join(meta['risk_flags'])}\n"
+    
+    md += "\n"
     
     # Summary
     if data.get('summary'):
