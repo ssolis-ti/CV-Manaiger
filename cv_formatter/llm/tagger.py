@@ -28,6 +28,10 @@ class LLMTagger:
         if not text:
             return CVData(full_name="Unknown", summary="No content provided")
 
+        # [PROMPT STRATEGY]
+        # We act as an HR Expert. 
+        # Crucial instruction: "Adhere strictly to JSON Schema".
+        # This reduces "yapping" (conversational filler) and forces data-only output.
         system_prompt = """
         You are an expert HR AI assistant. Your task is to extract structured information from a CV/Resume.
         
@@ -48,7 +52,9 @@ class LLMTagger:
         """
         
         # 1. OPTIMIZATION: Count Tokens before sending
-        # This helps in preventing Context Window errors.
+        # [FAILSAFE]: If tokens > Model Limit, we should technically truncate or error out here.
+        # Currently we just log it. 
+        # TODO: Implement Truncation logic if input_tokens_est > 120,000.
         input_tokens_est = count_tokens(system_prompt + text, self.model)
         logger.info(f"Preparing to send ~{input_tokens_est} input tokens to {self.model}")
 

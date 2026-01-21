@@ -24,14 +24,20 @@ class SectionExtractor:
         """
         Splits the CV text into a dictionary of sections based on headers.
         
-        Logic Flow:
-        1. Scan line-by-line for potential headers using Heuristic Regex.
-        2. Record valid headers and their line index.
-        3. Slice the text between Header[i] and Header[i+1].
+        [LOGIC FLOW]:
+        1. Iterate line by line.
+        2. Clean and lower-case each line.
+        3. Check against `SECTION_HEADERS` regex patterns.
+        4. If match found -> Mark as split point.
+        
+        [WARNING / LIMITATION]:
+        - This is a HEURISTIC method. It is not AI.
+        - [False Positive]: A line like "My Experience in Java..." might trigger the "Experience" section 
+          if the regex is too loose (e.g. just checking for word existence).
+        - [False Negative]: Creative headers ("Proficiency", "Career Arc") will be missed.
         
         Returns:
-            Dict where Key = Section Name (e.g., 'experience') and Value = Section Content.
-            Note: This is an INTERMEDIATE JSON-friendly structure.
+            Dict[str, str]: Section Name -> Content.
         """
         sections = {}
         # Simple approach: Find all header positions, then slice text
@@ -42,13 +48,15 @@ class SectionExtractor:
         
         for idx, line in enumerate(lines):
             clean_line = line.strip().lower()
-            # Heuristic: Header should be short and match a keyword
+            # [HEURISTIC]: Header should be short (<= 5 words). 
+            # This prevents extracting "Experience" from a long sentence in a paragraph.
             if len(clean_line.split()) > 5:
                 continue
                 
             for section_key, patterns in self.SECTION_HEADERS.items():
                 for pattern in patterns:
-                    # Match exact line or line ending with colon
+                    # [REGEX STRATEGY]: Match exact line OR line ending with colon.
+                    # Anchored to start (^) to avoid mid-sentence matches.
                     if re.match(f"^{pattern}:?$", clean_line):
                         found_headers.append((idx, section_key))
                         break
