@@ -49,7 +49,8 @@ class CVProcessor:
                 logger.warning(f"Triage Rejected: {reason}")
                 raise ValueError(f"Document rejected by Triage: {reason}")
                 
-            logger.info(f"Triage Accepted. Language: {meta_context.get('language')}")
+            detected_lang = meta_context.get('language', 'es')
+            logger.info(f"Triage Accepted. Language: {detected_lang}")
             
             # ---------------------------------------------------------
             # STEP 0.5: ATS CHECKER
