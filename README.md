@@ -46,15 +46,19 @@ pip install -r requirements.txt
 
 ### 3. Configuración
 
-El sistema necesita tu clave de OpenAI para funcionar. 
-
-1.  Copia el archivo de ejemplo:
-    ```bash
-    cp .env.example .env
-    # O en Windows: copy .env.example .env
+El sistema necesita tu clave de OpenAI para4.  **Configura el entorno**:
+    Copia el archivo de ejemplo y configura tu API Key (OpenAI o Inference.net):
+    ```powershell
+    copy .env.example .env
+    # Edita .env con tu clave
     ```
-2.  Abre el archivo `.env` con tu editor de texto favorito y pega tu clave:
-    ```ini
+
+5.  **Ejecuta la Demo**:
+    ```powershell
+    python run_demo.py
+    ```
+    *   Selecciona **Opción 1** para pegar automáticamente desde el portapapeles.
+    *   O selecciona **Opción 2** para pegar manualmente.
     OPENAI_API_KEY=sk-tu-clave-secreta-aqui...
     OPENAI_MODEL=gpt-4o-mini  # Puedes cambiarlo a gpt-4o si prefieres
     ```
@@ -83,7 +87,7 @@ python run_demo.py
 Para los curiosos, así está organizado el "cerebro":
 
 ## Architecture 🏗️
-The system follows a modular **Facade Pattern**, "The 7 Laws" compliant.
+The system follows a modular **Facade Pattern**.
 
 ```mermaid
 graph TD

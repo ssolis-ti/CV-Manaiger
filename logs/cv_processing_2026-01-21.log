@@ -118,3 +118,4 @@
 2026-01-21 12:24:45 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 658 tokens (In: 551, Out: 107). Est. Cost: $0.000147
 2026-01-21 12:24:45 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
 2026-01-21 12:24:45 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.
+2026-01-21 12:36:10 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log

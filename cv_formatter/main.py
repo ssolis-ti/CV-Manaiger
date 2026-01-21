@@ -11,7 +11,8 @@ Flow:
 Design Pattern: Facade. Clients (CLI, API) only interact with 'CVProcessor', hiding complexity.
 """
 from typing import Dict, Any
-import time  # [VIBRATION] Measure the pulse
+from typing import Dict, Any
+import time
 from cv_formatter.etl.cleaner import clean_text
 from cv_formatter.etl.section_extractor import extract_sections
 from cv_formatter.llm.tagger import tag_cv
@@ -33,7 +34,7 @@ class CVProcessor:
         Orchestrates the pipeline from Raw Text -> Final JSON.
         """
         try:
-            start_time = time.time()  # [VIBRATION] Measure the pulse
+            start_time = time.time()
             
             # ---------------------------------------------------------
             # STEP 1: ETL - CLEANING
