@@ -95,8 +95,8 @@ class LLMTagger:
         
         # 1. OPTIMIZATION: Count Tokens before sending
         # [FAILSAFE]: Truncate robustly to prevent 400 Bad Request on massive inputs.
-        # Assuming ~8k Context Window. Safety limit: ~32,000 chars.
-        MAX_CHARS = 32000
+        # Assuming ~128k Context Window (Gemma/Schematron). Safety limit: ~100,000 chars.
+        MAX_CHARS = 100000
         if len(text) > MAX_CHARS:
             logger.warning(f"Input text too long ({len(text)} chars). Truncating to {MAX_CHARS} chars to save context.")
             text = text[:MAX_CHARS] + "\n...[TRUNCATED_BY_SYSTEM]..."

@@ -77,14 +77,11 @@ class CVProcessor:
             sections = extract_sections(cleaned_text)
             logger.info(f"Sections found: {list(sections.keys())}")
             
-            # Prepare Context for LLM
-            context_for_llm = ""
-            if "raw_content" in sections:
-                logger.warning("No specific sections identified. Using raw content for LLM.")
-                context_for_llm = sections["raw_content"]
-            else:
-                for title, content in sections.items():
-                    context_for_llm += f"## {title.upper()}\n{content}\n\n"
+            # Prepare Context for LLM (Robust Approach)
+            # We send the FULL cleaned text to ensure nothing is lost due to mis-segmentation.
+            # We include the section keys as hints for the model.
+            header_hint = f"CV Layout Analysis: Found sections {list(sections.keys())}\n\n"
+            context_for_llm = header_hint + "### CV CONTENT ###\n" + cleaned_text
             
             # ---------------------------------------------------------
             # STEP 3: LLM - INTELLIGENT TAGGING (With Resilience)

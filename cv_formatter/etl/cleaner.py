@@ -42,10 +42,9 @@ def clean_text(text: str) -> str:
     # 'NFKC' compatibly decomposes characters which helps in regex matching.
     text = unicodedata.normalize('NFKC', text)
     
-    # --- STAGE 2: VISUAL ARTIFACTS REMOVAL ---
     # Replaces fancy designer bullets (•, ⁃, ‣, etc) with standard ASCII dashes.
-    # Added robust list support: *, +, and various unicode bullets.
-    text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u2212\u27a2\u27a4\u25b6➤➢➔➜⇒►●■◆▪▫]', '-', text)
+    # Expanded support for stars, triangles, squares, and arrows common in messy CVs.
+    text = re.sub(r'[\u2022\u2023\u25E6\u2043\u2219\u2212\u27a2\u27a4\u25b6➤➢➔➜⇒►●■◆▪▫★☆◦‣∙✓✔✕✖]', '-', text)
     
     # Also standardize simple asterisks used as bullets at start of lines
     text = re.sub(r'(?m)^\s*\* ', '- ', text)
