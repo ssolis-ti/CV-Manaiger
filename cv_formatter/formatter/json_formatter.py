@@ -44,6 +44,7 @@ class AnalysisMetadata(BaseModel):
     strength_signals: List[str] = Field(default_factory=list, description="Positive indicators (e.g. 'Promotion', 'High Impact', 'Prestigous Company')")
 
 class CVData(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID for this CV version")
     full_name: Optional[str] = Field(None, description="Candidate's full name")
     email: Optional[str] = None
     phone: Optional[str] = None

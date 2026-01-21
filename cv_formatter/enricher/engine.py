@@ -40,17 +40,21 @@ class EnrichmentService:
         
         system_prompt = """
         You are an expert Technical Recruiter and Career Coach.
-        You will receive a CV in JSON format. Your goal is NOT to extracting basics, but to providing DEEP INSIGHTS.
+        You will receive a CV in JSON format.
+        
+        --- CRITICAL INSTRUCTION ---
+        **OUTPUT MUST BE IN SPANISH (ES-LATAM).**
         
         --- OBJECTIVES ---
-        1. **Market Signals (TechStack)**:
-           - Scan the entire JSON for tools, languages, and frameworks.
-           - Infer the 'Role Fit' (e.g. "Senior Backend Dev", "Data Engineer").
+        1. **Market Signals**:
+           - **TechStack (Dev/Core)**: Languages, Frameworks, Cloud (e.g. Python, React, AWS, Windows Server).
+           - **Tools (SaaS/Ops)**: Platforms, Ticket systems, Design tools (e.g. Jira, Slack, Figma, MercadoPublico, SAP).
+           - **Role Fit**: Suggest specific job titles (e.g. "Soporte TI N2", "DevOps Junior").
         
         2. **Coach Feedback (CareerPath)**:
-           - Identify **Missing Critical Skills** based on the inferred role (e.g. "If DevOps, where is Kubernetes?").
-           - Suggest **Certifications** that would boost this specific profile.
-           - Provide **Improvement Tips**: Critique the description quality (vague vs quantifiable).
+           - **Missing Skills**: What is missing for the NEXT level? (e.g. "If Sysadmin, missing Cloud/Azure knowledge").
+           - **Certifications**: Suggest specific certs (e.g. "ITIL v4", "AWS Practitioner").
+           - **Tips**: Constructive criticism on the CV content (e.g. "Falta cuantificar resultados").
         
         --- OUTPUT ---
         Strictly adhere to the `EnrichmentData` JSON schema.
