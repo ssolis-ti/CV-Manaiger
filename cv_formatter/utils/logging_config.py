@@ -30,9 +30,17 @@ def setup_logging(level=logging.INFO):
     if root_logger.handlers:
         root_logger.handlers.clear()
     
-    # 2. Console Handler
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(log_format)
+    # 2. Console Handler (Rich if available, else Stream)
+    try:
+        from rich.logging import RichHandler
+        # RichHandler automatically handles timestamp and coloring
+        console_handler = RichHandler(rich_tracebacks=True, show_time=True)
+        # We don't set formatter for RichHandler as it has its own style
+        console_handler.setLevel(level)
+    except ImportError:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setFormatter(log_format)
+    
     root_logger.addHandler(console_handler)
     
     # 3. File Handler (Append mode)

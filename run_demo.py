@@ -1,12 +1,26 @@
 import sys
 import os
+from rich.console import Console
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.json import JSON
+
+# Append path ensuring backend modules are found
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from cv_formatter.main import CVProcessor
+from cv_formatter.utils.logging_config import setup_logging
 
 def main():
-    print("=== CV Manaiger: CLI Demo ===")
+    # Setup Logging (RichHandler will be used automatically)
+    setup_logging()
     
-    # Simple multi-line input
-    print("Paste your CV text below (Press Ctrl+D or Ctrl+Z on Windows + Enter to finish):")
+    console = Console()
+    console.print(Panel.fit("[bold cyan]CV Manaiger: AI Resume Processor[/bold cyan]", border_style="cyan"))
+
+    console.print("[yellow]Paste your CV text below (Press Ctrl+D or Ctrl+Z + Enter to finish):[/yellow]")
+    
+    # Capture Multi-line Input
     try:
         lines = []
         while True:
@@ -17,25 +31,30 @@ def main():
             lines.append(line)
         raw_text = "\n".join(lines)
     except KeyboardInterrupt:
-        print("\nAborted.")
+        console.print("\n[red]Aborted.[/red]")
         return
 
     if not raw_text.strip():
-        print("No text provided.")
+        console.print("[red]No text provided.[/red]")
         return
 
-    print("\nProcessing... Please wait (calling OpenAI)...")
+    console.print("\n")
     
     processor = CVProcessor()
+    
     try:
-        result = processor.process_cv(raw_text)
+        # Use a Spinner Status while processing
+        with console.status("[bold green]Processing CV with AI Models...[/bold green]", spinner="dots"):
+            result = processor.process_cv(raw_text)
         
-        print("\n=== RESULT (JSON) ===\n")
-        import json
-        print(json.dumps(result, indent=2, ensure_ascii=False))
+        console.print("\n[bold green]Success! Analysis Complete.[/bold green]")
+        console.print(Panel("Result JSON", expand=False))
+        
+        # Pretty Print JSON
+        console.print(JSON.from_data(result))
         
     except Exception as e:
-        print(f"\nError: {e}")
+        console.print(f"\n[bold red]Error:[/bold red] {e}")
         import traceback
         traceback.print_exc()
 
