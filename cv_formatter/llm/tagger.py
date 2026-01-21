@@ -53,10 +53,11 @@ class LLMTagger:
         You will receive a semi-structured text. 
         It has been processed by an ETL layer to normalize formatting.
         
-        --- OBJECTIVES ---
-        1. **Extraction**: Identify clear facts (Dates, Companies, Schools).
-           - **Smart Parsing**: If Company and Title are on the same line (e.g. "Google, Senior Dev"), split them. 
-           - **Dates**: If only "2023" is present, use it. If "Present" or "Actualidad", treat as current.
+        --- OBJETIVOS ---
+        1. **Extracción**: Identifica hechos claros (Fechas, Empresas, Instituciones).
+           - **Smart Parsing**: Si Empresa y Cargo están en la misma línea, sepáralos.
+           - **Fechas**: Si ves "2023", úsalo. "Presente"/"Actualidad" es la fecha actual.
+           - **ADVERTENCIA**: Las fechas pueden aparecer AL FINAL del bloque de texto. ¡Escanea todo!
            
            --- NON-NEGOTIABLE RULE: DATES (CRITICAL) ---
            You MUST extract dates for every experience entry.
@@ -78,19 +79,18 @@ class LLMTagger:
 
            Any skill explicitly mentioned in the text MUST be added to 'skills.hard_skills'.
            Inferred or generalized skills go ONLY to metadata or enrichment.
-        2. **Deep Analysis (Metadata)**:
-           - **Seniority**: Estimate level based on years and titles (Junior, Mid, Senior, Lead, Executive).
-           - **Style**: Analyze writing tone (Concise, Verbose, Action-oriented, Passive).
-           - **LLM Summary**: Write a cryptic, internal-use summary for a Recruiter (e.g. "Strong Java dev but short tenures").
-           - **Analysis (Tags)**:
-             - **Risk Flags**: 'Job Hopping' (many short roles), 'Gaps' (>6 months), 'Vague Descriptions'.
-             - **Strength Signals**: 'Fast Promotions', 'FAANG/BigTech', 'Leadership', 'High Impact Metrics'.
-        3. **Extraction of HIDDEN GEMS (Crucial)**:
-           - **Hard Skills (FACTS)**: This is NOT optional. Scan the text for explicit tools/techs (e.g. "Windows", "Python", "SAP").
-             > **RULE**: If the word appears in the text, it MUST be in 'skills.hard_skills'. Do not save it for "analysis". 
-             > This is raw extraction, not inference.
-           - **Impact**: Look for numbers (%, $, increase, reduction) and extract them as 'impact_metrics'.
-           - **Soft Skills**: Extract communication/leadership keywords into 'skills.soft_skills'.
+        2. **Análisis Profundo (Metadata)**:
+           - **Seniority**: Estima nivel (Junior, Mid, Senior, Lead).
+           - **Estilo**: Tono del CV (Conciso, Verboso, Orientado a la acción).
+           - **Resumen LLM**: Breve resumen interno para reclutadores (ej. "Fuerte en Java pero saltos cortos").
+           - **Análisis (Flags)**:
+             - **Riesgos**: 'Job Hopping' (muchos puestos cortos), 'Lagunas' (>6 meses).
+             - **Fortalezas**: 'Promociones rápidas', 'Empresas Top', 'Liderazgo'.
+        3. **Extracción de PERLAS OCULTAS (Crucial)**:
+           - **Hard Skills (HECHOS)**: Busca herramientas/tecnologías explícitas (e.g. "Windows", "Python").
+             > **REGLA**: Si la palabra está en el texto, DEBE ir a 'skills.hard_skills'. No la guardes para análisis.
+           - **Impacto**: Busca números (%, $, aumento, reducción) -> 'impact_metrics'.
+           - **Soft Skills**: Palabras clave de comunicación/liderazgo -> 'skills.soft_skills'.
            
            --- ONE-SHOT EXAMPLE (Ejemplo) ---
            Input:
