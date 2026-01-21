@@ -1,0 +1,89 @@
+import re
+from typing import Dict, List
+
+class SectionExtractor:
+    """
+    Heuristic-based extractor to identify and split CV sections.
+    """
+    
+    # Common headers in Spanish (and English fallback)
+    SECTION_HEADERS = {
+        "experience": [r"experiencia", r"experience", r"historial laboral", r"work history"],
+        "education": [r"educaci[óo]n", r"education", r"formaci[óo]n", r"academic"],
+        "skills": [r"habilidades", r"skills", r"competencias", r"tecnolog[íi]as", r"conocimientos"],
+        "projects": [r"proyectos", r"projects"],
+        "languages": [r"idiomas", r"languages"],
+        "certifications": [r"certificaciones", r"certifications"],
+        "contact": [r"contacto", r"contact", r"datos personales"]
+    }
+
+    def extract_sections(self, text: str) -> Dict[str, str]:
+        """
+        Splits the CV text into a dictionary of sections based on headers.
+        
+        Logic Flow:
+        1. Scan line-by-line for potential headers using Heuristic Regex.
+        2. Record valid headers and their line index.
+        3. Slice the text between Header[i] and Header[i+1].
+        
+        Returns:
+            Dict where Key = Section Name (e.g., 'experience') and Value = Section Content.
+            Note: This is an INTERMEDIATE JSON-friendly structure.
+        """
+        sections = {}
+        # Simple approach: Find all header positions, then slice text
+        
+        # 1. Identify header positions
+        found_headers = []
+        lines = text.split('\n')
+        
+        for idx, line in enumerate(lines):
+            clean_line = line.strip().lower()
+            # Heuristic: Header should be short and match a keyword
+            if len(clean_line.split()) > 5:
+                continue
+                
+            for section_key, patterns in self.SECTION_HEADERS.items():
+                for pattern in patterns:
+                    # Match exact line or line ending with colon
+                    if re.match(f"^{pattern}:?$", clean_line):
+                        found_headers.append((idx, section_key))
+                        break
+        
+        # Sort headers by position
+        found_headers.sort(key=lambda x: x[0])
+        
+        # 2. Slice content
+        if not found_headers:
+            # Fallback: treat whole text as raw content or unknown
+            return {"raw_content": text}
+            
+        # Capture content before the first header (usually Profile/Header info)
+        if found_headers[0][0] > 0:
+            header_info = "\n".join(lines[:found_headers[0][0]])
+            if header_info.strip():
+                sections["header_info"] = header_info.strip()
+        
+        # Capture content between headers
+        for i in range(len(found_headers)):
+            start_idx, key = found_headers[i]
+            # Content starts after the header line
+            start_content_idx = start_idx + 1
+            
+            if i < len(found_headers) - 1:
+                end_content_idx = found_headers[i+1][0]
+            else:
+                end_content_idx = len(lines)
+            
+            content = "\n".join(lines[start_content_idx:end_content_idx]).strip()
+            # Append if section already exists (e.g. split Experience)
+            if key in sections:
+                sections[key] += "\n" + content
+            else:
+                sections[key] = content
+                
+        return sections
+
+def extract_sections(text: str) -> Dict[str, str]:
+    # Convenience function
+    return SectionExtractor().extract_sections(text)
