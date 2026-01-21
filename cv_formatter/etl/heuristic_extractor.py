@@ -19,61 +19,56 @@ class HeuristicExtractor:
         roles = []
         dates = []
         
-        # 1. Scan for dates
+        # 1. Scan for dates and categorize lines
         for line in lines:
             if self.DATE_REGEX.search(line):
                 dates.append(line)
             else:
-                # Potential Role/Desc line
-                # Filter out garbage
-                if len(line) > 3 and "EDUCATION" not in line and "EXPERIENCE" not in line:
-                    roles.append(line)
+                # Potential Role Header?
+                # Heuristic: Not a bullet point, not too long, not too short.
+                is_bullet = line.startswith(('-', '*', '•', '+'))
+                if not is_bullet and 4 < len(line) < 100:
+                    if "EDUCATION" not in line.upper() and "EXPERIENCE" not in line.upper():
+                        roles.append(line)
                     
-        # 2. Try to reconstruct Experience
+        # 2. Reconstruct Experience
         experience = []
-        
-        # Heuristic: If we have N dates, assume the first N role-blocks correspond to them?
-        # This is risky. Better approach:
-        # The user's CV has distinct blocks: "Company, Role".
-        # Let's try to act smart.
-        
-        # Mapping Strategy: Zip Longest-Blocks with Dates?
-        # Fallback Strategy: Just dump text into description and let user fix it, 
-        # but attach the Date so score isn't 0.
-        
         limit = min(len(roles), len(dates))
+        
+        from cv_formatter.enricher.timeline_analyzer import TimelineAnalyzer
+        analyzer = TimelineAnalyzer()
+        
         for i in range(limit):
-            # Assume role is the first line of the block? 
-            # In the user's case, roles are separated by description...
-            # This 'roles' list is actually ALL prose.
-            # We can't easily distinguish Title from Description without LLM.
+            role_header = roles[i]
+            date_line = dates[i]
             
-            # Simplified: Create Generic entries for the dates found.
-            # "Role detected via Heuristic"
-            
-            date_str = dates[i]
-            match = self.DATE_REGEX.search(date_str)
-            start, end = "Unknown", "Unknown"
+            # Normalize dates for the analyzer
+            match = self.DATE_REGEX.search(date_line)
+            start_date, end_date = "Unknown", "Unknown"
             if match:
+                # Split parts (e.g. "Mar 2023 - Ago 2025")
                 parts = re.split(r'[\s\-\u2013]+', match.group(0))
                 if len(parts) >= 2:
-                    start = parts[0] + " " + parts[1] # "Mar 2023"
-                    end = parts[-1] # "Present" or "2025"
-            
-            # Try to grab a chunk of text as description
-            # This is rough, but better than nothing.
-            desc_chunk = roles[i] if i < len(roles) else ""
-            
+                    # Crude split to get start/end components
+                    # Analyzer will handle the actual parsing
+                    start_date = " ".join(parts[:2])
+                    end_date = parts[-1] 
+
+            # Try to determine Company vs Title
+            parts = re.split(r'[,|@–-]', role_header, 1)
+            title = parts[1].strip() if len(parts) > 1 else role_header
+            company = parts[0].strip() if len(parts) > 1 else "Unknown"
+
             experience.append(ExperienceEntry(
-                title="Position (Recovered)",
-                company="Unknown",
-                start_date=start,
-                end_date=end,
-                description=desc_chunk
+                title=title,
+                company=company,
+                start_date=start_date,
+                end_date=end_date,
+                description=role_header # Use full line as description/base
             ))
             
         return CVData(
             full_name="Candidate (Recovered)",
-            summary="Extracted via Heuristic Fallback due to AI Service Failure",
+            summary="Extracted via Heuristic Fallback (Resilient Mapping)",
             experience=experience
         )

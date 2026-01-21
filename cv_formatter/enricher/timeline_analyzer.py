@@ -87,17 +87,58 @@ class TimelineAnalyzer:
         )
 
     def _parse_date(self, date_str: str) -> Optional[date]:
-        """Parses YYYY-MM or YYYY-MM-DD string to date object."""
+        """Robustly parses dates like 'YYYY-MM', 'MM/YYYY', 'Mar 2023', 'Marzo 2023'."""
         if not date_str: return None
+        
+        # 1. Standardize (Remove periods, comma, spaces)
+        clean = date_str.lower().replace('.', '').replace(',', '').strip()
+        
+        # 2. Try YYYY-MM or YYYY-MM-DD
         try:
-            # Try YYYY-MM
-            return datetime.strptime(date_str[:7], "%Y-%m").date()
-        except ValueError:
-            return None
+            return datetime.strptime(clean[:7], "%Y-%m").date()
+        except: pass
+        
+        # 3. Handle Month Year (ES/EN)
+        months_map = {
+            'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4, 'may': 5, 'jun': 6,
+            'jul': 7, 'ago': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12,
+            'jan': 1, 'apr': 4, 'aug': 8, 'dec': 12,
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+            'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+            'january': 1, 'february': 2, 'march': 3, 'april': 4, 'june': 6,
+            'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+        }
+        
+        # Regex to find Year and Month
+        year_match = re.search(r'(\d{4})', clean)
+        if not year_match: return None
+        year = int(year_match.group(1))
+        
+        # Look for month name in string
+        month = 1 # Default to Jan
+        for name, val in months_map.items():
+            if name in clean:
+                month = val
+                break
+        else:
+            # Maybe it's numeric MM/YYYY?
+            month_match = re.search(r'(\d{1,2})[/\- ]', clean)
+            if month_match:
+                m = int(month_match.group(1))
+                if 1 <= m <= 12: month = m
+                
+        return date(year, month, 1)
 
     def _get_end_date(self, date_str: str) -> date:
         """Handles 'Present' / None as Today."""
-        if not date_str or date_str.lower() in ['present', 'actualidad', 'presente', 'current']:
+        if not date_str: 
             return date.today()
+        
+        val = date_str.lower()
+        if any(w in val for w in ['present', 'actualidad', 'presente', 'current', 'ahora']):
+            return date.today()
+            
         parsed = self._parse_date(date_str)
         return parsed if parsed else date.today()
+
+import re # Ensure re is imported if not already in global scope or add to imports
