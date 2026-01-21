@@ -54,11 +54,16 @@ class CVProcessor:
                 context_for_llm += f"## {title.upper()}\n{content}\n\n"
         
         # ---------------------------------------------------------
-        # STEP 3: LLM - INTELLIGENT TAGGING
+        # STEP 3: LLM - INTELLIGENT TAGGING (With Resilience)
         # ---------------------------------------------------------
-        # This calls the OpenAI API.
-        # WARNING: Cost and Latency implication.
-        # The 'tagger' handles the prompt engineering and Pydantic parsing.
+        # This calls the OpenAI API via our 'tagger' module.
+        #
+        # ROBUSTNESS:
+        # - The call is wrapped in exponential backoff retries (Tenacity).
+        # - Tokens are counted and logged before sending (Audit).
+        # - Costs are estimated in real-time.
+        #
+        # WARNING: This is the slowest step (Network I/O).
         cv_data_obj = tag_cv(context_for_llm)
         
         # ---------------------------------------------------------
