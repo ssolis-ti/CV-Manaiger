@@ -111,6 +111,12 @@ def main():
     
     console = Console()
     console.print(Panel.fit("[bold cyan]CV Manaiger: AI Resume Processor[/bold cyan]", border_style="cyan"))
+    
+    # Show Active Configuration
+    from cv_formatter.config import config
+    console.print(f"[dim]🔌 Provider: {config.OPENAI_BASE_URL}[/dim]")
+    console.print(f"[dim]🧠 Structure Model: {config.MODEL_STRUCTURE}[/dim]")
+    console.print(f"[dim]✨ Enrichment Model: {config.MODEL_ENRICH}[/dim]")
 
     while True:
         console.print("\n[bold]Menú Principal:[/bold]")
@@ -197,6 +203,18 @@ def main():
             
             console.print(Panel("Vista Previa (Primeras 20 líneas)", expand=False))
             console.print(JSON.from_data(cv_data))
+            
+            # Show Insight Preview if available
+            if enrichment_data:
+                stack = enrichment_data.get('market_signals', {}).get('stack_detected', [])
+                tips = enrichment_data.get('coach_feedback', {}).get('improvement_tips', [])
+                
+                insight_text = f"[bold yellow]Stack Detectado:[/bold yellow] {', '.join(stack[:5])}...\n"
+                insight_text += f"[bold yellow]Tips de Mejora:[/bold yellow]\n"
+                for tip in tips[:3]:
+                    insight_text += f"- {tip}\n"
+                    
+                console.print(Panel(insight_text, title="🤖 Insights de Gemma 3 (Preview)", border_style="magenta"))
             
             # Ask to continue
             if not Prompt.ask("\n¿Procesar otro CV?", choices=["y", "n"], default="y") == "y":
