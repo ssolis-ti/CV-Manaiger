@@ -28,3 +28,70 @@
 2026-01-21 11:34:55 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 864 tokens (In: 801, Out: 63). Est. Cost: $0.000158
 2026-01-21 11:34:55 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
 2026-01-21 11:34:55 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.
+2026-01-21 11:36:59 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:36:59 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:52:02 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:52:02 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:52:02 | INFO     | cv_formatter.main    | Starting CV Processing Pipeline
+2026-01-21 11:52:02 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 11:52:02 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 11:52:02 | INFO     | cv_formatter.main    | Sections found: ['raw_content']
+2026-01-21 11:52:02 | WARNING  | cv_formatter.main    | No specific sections identified. Using raw content for LLM.
+2026-01-21 11:52:02 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis (OpenAI)...
+2026-01-21 11:52:04 | INFO     | cv_formatter.llm.tagger | Preparing to send ~188 input tokens to gpt-4o-mini
+2026-01-21 11:52:09 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 11:52:09 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 858 tokens (In: 799, Out: 59). Est. Cost: $0.000155
+2026-01-21 11:52:09 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
+2026-01-21 11:52:09 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.
+2026-01-21 11:53:01 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:53:01 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:55:57 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:55:57 | INFO     | cv_formatter.main    | Starting CV Processing Pipeline
+2026-01-21 11:55:57 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 11:55:57 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 11:55:57 | INFO     | cv_formatter.main    | Sections found: ['raw_content']
+2026-01-21 11:55:57 | WARNING  | cv_formatter.main    | No specific sections identified. Using raw content for LLM.
+2026-01-21 11:55:57 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis (OpenAI)...
+2026-01-21 11:55:58 | INFO     | cv_formatter.llm.tagger | Preparing to send ~188 input tokens to gpt-4o-mini
+2026-01-21 11:56:01 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 11:56:01 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 858 tokens (In: 799, Out: 59). Est. Cost: $0.000155
+2026-01-21 11:56:01 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
+2026-01-21 11:56:01 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.
+2026-01-21 11:57:42 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:57:42 | INFO     | cv_formatter.main    | Starting CV Processing Pipeline
+2026-01-21 11:57:42 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 11:57:42 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 11:57:42 | INFO     | cv_formatter.main    | Sections found: ['raw_content']
+2026-01-21 11:57:42 | WARNING  | cv_formatter.main    | No specific sections identified. Using raw content for LLM.
+2026-01-21 11:57:42 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis (OpenAI)...
+2026-01-21 11:57:44 | INFO     | cv_formatter.llm.tagger | Preparing to send ~188 input tokens to gpt-4o-mini
+2026-01-21 11:57:48 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 11:57:48 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 857 tokens (In: 799, Out: 58). Est. Cost: $0.000155
+2026-01-21 11:57:48 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
+2026-01-21 11:57:48 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.
+2026-01-21 11:59:00 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 11:59:00 | INFO     | cv_formatter.main    | Starting CV Processing Pipeline
+2026-01-21 11:59:00 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 11:59:00 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 11:59:00 | INFO     | cv_formatter.main    | Sections found: ['raw_content']
+2026-01-21 11:59:00 | WARNING  | cv_formatter.main    | No specific sections identified. Using raw content for LLM.
+2026-01-21 11:59:00 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis (OpenAI)...
+2026-01-21 11:59:02 | INFO     | cv_formatter.llm.tagger | Preparing to send ~210 input tokens to gpt-4o-mini
+2026-01-21 11:59:05 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 11:59:05 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 913 tokens (In: 821, Out: 92). Est. Cost: $0.000178
+2026-01-21 11:59:05 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
+2026-01-21 11:59:05 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.
+2026-01-21 12:00:04 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 12:00:15 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 12:02:42 | INFO     | root                 | Logging initialized. Writing to: logs/cv_processing_2026-01-21.log
+2026-01-21 12:02:42 | INFO     | cv_formatter.main    | Starting CV Processing Pipeline
+2026-01-21 12:02:42 | INFO     | cv_formatter.main    | Step 1: ETL Cleaning...
+2026-01-21 12:02:42 | INFO     | cv_formatter.main    | Step 2: Section Extraction...
+2026-01-21 12:02:42 | INFO     | cv_formatter.main    | Sections found: ['raw_content']
+2026-01-21 12:02:42 | WARNING  | cv_formatter.main    | No specific sections identified. Using raw content for LLM.
+2026-01-21 12:02:42 | INFO     | cv_formatter.main    | Step 3: LLM Tagging & Analysis (OpenAI)...
+2026-01-21 12:02:44 | INFO     | cv_formatter.llm.tagger | Preparing to send ~187 input tokens to gpt-4o-mini
+2026-01-21 12:02:47 | INFO     | httpx                | HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-01-21 12:02:47 | INFO     | cv_formatter.llm.tagger | OpenAI Usage: 855 tokens (In: 798, Out: 57). Est. Cost: $0.000154
+2026-01-21 12:02:47 | INFO     | cv_formatter.main    | Step 4: Formatting Final JSON...
+2026-01-21 12:02:47 | INFO     | cv_formatter.main    | Pipeline Completed Successfully.

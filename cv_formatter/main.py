@@ -5,7 +5,7 @@ from cv_formatter.formatter.json_formatter import format_to_dict
 from cv_formatter.utils.logging_config import setup_logging, get_logger
 import json
 
-setup_logging() # Ensure logging is setup when module is imported or run
+# setup_logging() should be called by the application entry point (e.g., run_demo.py)
 logger = get_logger(__name__)
 
 class CVProcessor:

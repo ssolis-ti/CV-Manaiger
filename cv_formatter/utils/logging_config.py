@@ -26,9 +26,9 @@ def setup_logging(level=logging.INFO):
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
     
-    # Clear existing handlers to avoid duplicates if re-initialized
+    # [IDEMPOTENCY CHECK]: If handlers exist, assume already configured.
     if root_logger.handlers:
-        root_logger.handlers.clear()
+        return
     
     # 2. Console Handler (Rich if available, else Stream)
     try:

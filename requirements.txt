@@ -5,3 +5,4 @@ pydantic
 tiktoken
 tenacity
 rich
+pyperclip
