@@ -5,6 +5,19 @@ Transforma currículums desordenados en datos estructurados (JSON) listos para I
 
 ---
 
+---
+
+## 📚 Documentation (The "Brain")
+
+**[MANDATORY CHECKPOINT]**: [docs/NEXT_STEPS.md](docs/NEXT_STEPS.md) (Read before continuing)
+
+Detailed documentation is available in the `docs/` folder:
+*   **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Twin-JSON Design, Data Flow, Facade Pattern.
+*   **[AI_CONTEXT.md](docs/AI_CONTEXT.md)**: System Prompts, Models (Schematron vs Gemma), and Resilience.
+*   **[WORKFLOWS.md](docs/WORKFLOWS.md)**: How to run, debug, and test (SOPs).
+
+---
+
 ## 🚀 Quickstart (Guía Rápida)
 
 Sigue estos pasos para poner en marcha el backend de Python en menos de 5 minutos.
