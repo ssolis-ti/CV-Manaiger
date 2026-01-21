@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+logs/
+output/
+cv_output.json
+cv_export.md
