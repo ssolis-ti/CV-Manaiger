@@ -58,15 +58,21 @@ class LLMTagger:
            - **Smart Parsing**: If Company and Title are on the same line (e.g. "Google, Senior Dev"), split them. 
            - **Dates**: If only "2023" is present, use it. If "Present" or "Actualidad", treat as current.
            
-           --- NON-NEGOTIABLE RULE ---
+           --- NON-NEGOTIABLE RULE: DATES ---
            If a date range exists anywhere near an experience description, 
            you MUST assign start_date and end_date to the corresponding ExperienceEntry.
            Dates are FACTS, not analysis.
 
+           --- NON-NEGOTIABLE RULE: SKILLS ---
+           Any skill explicitly mentioned in the text MUST be added to 'skills.hard_skills'.
+           Inferred or generalized skills go ONLY to metadata or enrichment.
+           
            Example:
-           "Company X ... Mar 2023 – Ago 2025"
-           → start_date: "2023-03"
-           → end_date: "2025-08"
+           "Windows Server" (In text) → CVData.skills.hard_skills
+           "Infrastructure knowledge" (Inferred) → Metadata/Enrichment (NOT CVData)
+           
+           Example Dates:
+           "Mar 2023 – Ago 2025" → start_date: "2023-03", end_date: "2025-08"
         2. **Deep Analysis (Metadata)**:
            - **Seniority**: Estimate level based on years and titles (Junior, Mid, Senior, Lead, Executive).
            - **Style**: Analyze writing tone (Concise, Verbose, Action-oriented, Passive).
