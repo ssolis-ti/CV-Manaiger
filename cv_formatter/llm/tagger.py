@@ -74,10 +74,12 @@ class LLMTagger:
            - **Analysis (Tags)**:
              - **Risk Flags**: 'Job Hopping' (many short roles), 'Gaps' (>6 months), 'Vague Descriptions'.
              - **Strength Signals**: 'Fast Promotions', 'FAANG/BigTech', 'Leadership', 'High Impact Metrics'.
-        3. **Inference (Tagging)**:
-           - Look at 'Description' fields. Infer **Hard Skills** used in that specific role.
-           - Quantify **Impact**: Look for numbers (%, $, increase, reduction) and extract them as 'impact_metrics'.
-           - Classify global skills into Hard vs Soft.
+        3. **Extraction of HIDDEN GEMS (Crucial)**:
+           - **Hard Skills (FACTS)**: This is NOT optional. Scan the text for explicit tools/techs (e.g. "Windows", "Python", "SAP").
+             > **RULE**: If the word appears in the text, it MUST be in 'skills.hard_skills'. Do not save it for "analysis". 
+             > This is raw extraction, not inference.
+           - **Impact**: Look for numbers (%, $, increase, reduction) and extract them as 'impact_metrics'.
+           - **Soft Skills**: Extract communication/leadership keywords into 'skills.soft_skills'.
            
         --- OUTPUT FORMAT ---
         You MUST adhere strictly to the provided JSON Schema.
