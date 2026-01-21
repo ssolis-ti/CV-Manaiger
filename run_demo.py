@@ -152,20 +152,36 @@ def main():
             with console.status("[bold green]Procesando CV con Inteligencia Artificial...[/bold green]", spinner="dots"):
                 result = processor.process_cv(raw_text)
             
+            # Generate dynamic filename
+            import re
+            from datetime import datetime
+            
+            # Extract candidate name safe for filename
+            raw_name = result.get('full_name', 'Unknown_Candidate')
+            safe_name = re.sub(r'[^a-zA-Z0-9]', '_', raw_name)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Ensure output directory exists
+            output_dir = "output"
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            
+            base_filename = os.path.join(output_dir, f"CV_{safe_name}_{timestamp}")
+            
             # Save JSON
-            output_file = "cv_output.json"
-            with open(output_file, "w", encoding="utf-8") as f:
+            output_json = f"{base_filename}.json"
+            with open(output_json, "w", encoding="utf-8") as f:
                 json.dump(result, f, indent=2, ensure_ascii=False)
             
             # Save Markdown
             md_output = json_to_markdown(result)
-            md_file = "cv_export.md"
-            with open(md_file, "w", encoding="utf-8") as f:
+            output_md = f"{base_filename}.md"
+            with open(output_md, "w", encoding="utf-8") as f:
                 f.write(md_output)
 
             console.print(f"\n[bold green]¡Éxito! Análisis Completado.[/bold green]")
-            console.print(f"[blue]JSON guardado en: {output_file}[/blue]")
-            console.print(f"[blue]Markdown exportado a: {md_file}[/blue]")
+            console.print(f"[blue]JSON guardado en: {output_json}[/blue]")
+            console.print(f"[blue]Markdown exportado a: {output_md}[/blue]")
             
             console.print(Panel("Vista Previa (Primeras 20 líneas)", expand=False))
             console.print(JSON.from_data(result))
