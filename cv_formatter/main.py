@@ -26,10 +26,60 @@ logger = get_logger(__name__)
 class CVProcessor:
     """
     Facade to process a CV from raw text to structured JSON.
+    
+    Flow: Raw Text -> Triage -> ATS -> Clean -> PreExtract Dates -> LLM -> Merge -> Enrich -> Output
     """
     
     def __init__(self):
         self.triage_daemon = TriageDaemon()
+    
+    def _merge_date_hints(self, cv_data, date_hints: dict, raw_text: str):
+        """
+        Merges pre-extracted dates with LLM results.
+        
+        Strategy: For each experience entry without dates, find the closest
+        date_hint by matching title/company text against raw_text lines.
+        
+        Flow:
+            1. Check if experience already has dates -> skip
+            2. Search raw_text for title/company line
+            3. Look for date_hint in nearby lines (+1, +2)
+            4. Apply date and confidence from hint
+        
+        Warning: Proximity heuristic may fail on complex CV layouts.
+        """
+        from cv_formatter.formatter.json_formatter import CVData
+        
+        lines = raw_text.split('\n')
+        
+        for exp in cv_data.experience:
+            # Skip if already has dates or user adjusted
+            if exp.start_date or exp.user_adjusted:
+                continue
+            
+            # Find which line contains title/company
+            title_lower = (exp.title or '').lower()
+            company_lower = (exp.company or '').lower()
+            
+            for line_num, line in enumerate(lines):
+                line_lower = line.lower()
+                
+                # Check if this line matches the experience
+                if title_lower and title_lower in line_lower:
+                    # Look for date hints in this line or nearby lines
+                    for offset in [0, 1, 2]:  # Check current line and next 2
+                        hint_key = line_num + offset
+                        if hint_key in date_hints:
+                            hint = date_hints[hint_key]
+                            if hint.start_date:
+                                exp.start_date = hint.start_date
+                                exp.end_date = hint.end_date
+                                exp.date_confidence = hint.confidence
+                                exp.original_date_line = hint.raw_line
+                                break
+                    break
+        
+        return cv_data
 
     def process_cv(self, raw_text: str) -> dict:
         """
@@ -77,6 +127,17 @@ class CVProcessor:
             sections = extract_sections(cleaned_text)
             logger.info(f"Sections found: {list(sections.keys())}")
             
+            # ---------------------------------------------------------
+            # STEP 2.5: DATE PRE-EXTRACTION (Before LLM)
+            # ---------------------------------------------------------
+            # [DIRECTION]: Raw Text -> DatePreProcessor -> date_hints dict
+            # [STRATEGY]: Extract dates BEFORE LLM to reduce AI dependency
+            # [WARNING]: This doesn't replace LLM, just provides fallback data
+            from cv_formatter.etl.date_preprocessor import DatePreProcessor
+            date_preprocessor = DatePreProcessor()
+            date_hints = date_preprocessor.extract_all_dates(raw_text)
+            logger.info(f"Pre-extracted {len([h for h in date_hints.values() if h.start_date])} date ranges")
+            
             # Prepare Context for LLM (Robust Approach)
             # We send the FULL cleaned text to ensure nothing is lost due to mis-segmentation.
             # We include the section keys as hints for the model.
@@ -114,6 +175,28 @@ class CVProcessor:
                     # Case 2: Merge (Keep LLM metadata if valid, but fill Experience)
                     cv_data_obj.experience = fallback_data.experience
                     cv_data_obj.full_name = cv_data_obj.full_name or fallback_data.full_name
+            
+            # ---------------------------------------------------------
+            # STEP 3.5: MERGE PRE-EXTRACTED DATES
+            # ---------------------------------------------------------
+            # [DIRECTION]: date_hints + cv_data_obj.experience -> merged dates
+            # [FLOW]: For each experience without dates, try to match with date_hints
+            # [WARNING]: Uses line proximity heuristic - not 100% accurate
+            cv_data_obj = self._merge_date_hints(cv_data_obj, date_hints, raw_text)
+            
+            # ---------------------------------------------------------
+            # STEP 3.6: MERGE PRE-EXTRACTED SKILLS
+            # ---------------------------------------------------------
+            # [DIRECTION]: raw_text -> SkillPreProcessor -> merge into cv_data_obj.skills
+            # [FLOW]: If LLM returned empty skills, use regex-based extraction
+            # [WARNING]: Only fills if LLM failed - doesn't override LLM results
+            if not cv_data_obj.skills.hard_skills:
+                from cv_formatter.etl.skill_preprocessor import SkillPreProcessor
+                skill_extractor = SkillPreProcessor()
+                extracted_skills = skill_extractor.extract_skills(raw_text)
+                if extracted_skills:
+                    cv_data_obj.skills.hard_skills = extracted_skills
+                    logger.info(f"Pre-extracted {len(extracted_skills)} skills via fallback")
             
             # [INJECTION]: Attach ATS Result and Raw Text to the Object
             cv_data_obj.ats_analysis = ats_result

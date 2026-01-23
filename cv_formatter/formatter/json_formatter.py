@@ -13,6 +13,14 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, model_validator
 
 class ExperienceEntry(BaseModel):
+    """
+    Represents a single work experience entry.
+    
+    Flow: LLM extracts -> Pydantic validates -> Frontend displays
+    Redirection: If LLM fails dates, check_dates() validator tries regex fallback
+    
+    Warning: date_confidence affects frontend UI - "low" shows warning icon
+    """
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Internal unique ID")
     title: Optional[str] = Field(None, description="Job title")
     company: Optional[str] = Field(None, description="Company name")
@@ -23,34 +31,38 @@ class ExperienceEntry(BaseModel):
     # Hidden tags / analysis
     skills_used: List[str] = Field(default_factory=list, description="Skills inferred from description")
     impact_metrics: List[str] = Field(default_factory=list, description="Quantifiable metrics/impact extracted from description")
+    
+    # --- MANUAL ADJUSTMENT SUPPORT (Frontend Integration) ---
+    # Direction: Backend sets confidence -> Frontend shows UI accordingly
+    date_confidence: str = Field("high", description="Confidence level: high, medium, low, manual")
+    user_adjusted: bool = Field(False, description="True if user manually corrected dates")
+    original_date_line: Optional[str] = Field(None, description="Raw text line for user reference")
 
     @model_validator(mode='after')
     def check_dates(self):
         """
-        Heuristic: If dates are missing, auto-extract from title/description using Regex.
-        This provides a fallback for "lazy" LLMs.
-        """
-        import re
+        FALLBACK VALIDATOR: If LLM didn't extract dates, try regex.
         
-        # If dates are already there, do nothing
-        if self.start_date:
+        Flow: 
+            1. Check if dates exist -> return early
+            2. Use DateNormalizer to extract from title/company/description
+            3. Mark confidence as "medium" if auto-extracted
+        
+        Warning: This is a last-resort fallback. Pre-processor should handle most cases.
+        """
+        # If user already adjusted or dates exist, skip
+        if self.user_adjusted or self.start_date:
             return self
-            
-        # Text to search (Title often contains "Role - Company - 2020-2022")
+        
+        # Use DateNormalizer for comprehensive extraction
+        from cv_formatter.utils.date_normalizer import DateNormalizer
         search_text = f"{self.title or ''} {self.company or ''} {self.description or ''}"
         
-        # Regex for "YYYY - YYYY" or "YYYY - Present"
-        # 1. "(20\d{2})[\s\-\u2013]+(Present|Actualidad|Current|Now|20\d{2})"
-        year_pattern = re.search(r'(20\d{2})[\s\-\u2013]+(Present|Actualidad|Current|Now|20\d{2})', search_text, re.IGNORECASE)
-        
-        if year_pattern:
-            self.start_date = year_pattern.group(1)
-            raw_end = year_pattern.group(2)
-            
-            if raw_end.lower() in ['present', 'actualidad', 'current', 'now']:
-                self.end_date = "Present"
-            else:
-                self.end_date = raw_end
+        start, end = DateNormalizer.extract_range(search_text)
+        if start != "Unknown":
+            self.start_date = start
+            self.end_date = end if end != "Unknown" else None
+            self.date_confidence = "medium"  # Auto-extracted via fallback
         
         return self
 
