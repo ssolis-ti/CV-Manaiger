@@ -64,12 +64,21 @@ def json_to_markdown(data: dict) -> str:
     
     return md
 
+def safe_input(console, prompt: str) -> str:
+    """Safely captures input handling potential encoding errors."""
+    try:
+        return console.input(prompt)
+    except UnicodeDecodeError:
+        # Fallback for Windows consoles with bad encoding
+        return input(prompt)
+
 def get_manual_input(console):
     console.print(Panel(
         "[yellow]INSTRUCCIONES:[/yellow]\n"
         "1. Copia el texto de tu CV.\n"
         "2. Pégalo aquí abajo (puede ocupar muchas líneas).\n"
-        "3. Cuando termines, escribe [bold white]FIN[/bold white] en una línea nueva y presiona Enter.",
+        "3. Cuando termines, escribe [bold white]///[/bold white] (tres barras) o [bold white]EOF[/bold white] en una línea nueva y presiona Enter.\n"
+        "[dim]Nota: No uses 'FIN' ni 'END' ya que podrían ser parte del texto.[/dim]",
         title="Entrada Manual",
         border_style="blue"
     ))
@@ -79,21 +88,25 @@ def get_manual_input(console):
     try:
         while True:
             try:
-                line = console.input(f"[dim]Línea {line_count+1}:[/dim] ")
+                line = safe_input(console, f"[dim]Línea {line_count+1}:[/dim] ")
             except EOFError:
                 break
             
             # Check for SENTINEL
-            if line.strip().upper() in ["END", "FIN"]:
+            stripped = line.strip().upper()
+            if stripped in ["///", "EOF"]:
                 break
                 
-            lines.append(line)
-            # User Feedback
-            sys.stdout.write(f"\r\033[K[dim]Líneas capturadas: {len(lines)}[/dim]")
-            sys.stdout.flush()
+            cv_lines.append(line)
+            line_count += 1
             
-        console.print("\n")
-        return "\n".join(lines)
+            # User Feedback (only update every 10 lines to reduce flicker)
+            if line_count % 10 == 0:
+                sys.stdout.write(f"\r\033[K[dim]Líneas capturadas: {line_count}[/dim]")
+                sys.stdout.flush()
+            
+        console.print(f"\n[green]¡Captura finalizada! {len(cv_lines)} líneas recibidas.[/green]\n")
+        return "\n".join(cv_lines)
     except KeyboardInterrupt:
         return None
 
@@ -152,6 +165,23 @@ def main():
             console.print("[red]No se proporcionó texto válido.[/red]")
             continue
 
+        # --- VERIFICATION STEP ---
+        clean_preview = raw_text.strip()
+        preview_start = clean_preview[:200].replace('\n', ' ')
+        preview_end = clean_preview[-200:].replace('\n', ' ')
+        
+        console.print(Panel(
+            f"[bold]Inicio:[/bold] {preview_start}...\n\n"
+            f"[bold]Fin:[/bold] ...{preview_end}\n\n"
+            f"[dim]Total: {len(raw_text)} caracteres[/dim]",
+            title="Vista Previa del Texto Capturado",
+            border_style="yellow"
+        ))
+        
+        if Prompt.ask("¿Es este el texto completo?", choices=["s", "n"], default="s") != "s":
+            console.print("[yellow]Operación cancelada. Intenta copiar nuevamente.[/yellow]")
+            continue
+            
         # PROCESS
         processor = CVProcessor()
         try:

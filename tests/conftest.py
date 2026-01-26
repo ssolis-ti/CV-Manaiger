@@ -30,13 +30,41 @@ Marzo 2019 - Diciembre 2021
 
 @pytest.fixture(scope="session")
 def cv_processing_result(raw_text):
-    processor = CVProcessor()
-    # Process the CV. This might make an API call depending on implementation.
-    # If the system uses a real LLM, this will cost money/tokens.
-    # Ideally we should mock the LLM, but for an "Integrity" test on a "Stable MVP", 
-    # we might want the real deal or a recorded response.
-    # Given the instructions "refuses to invent dates", it implies testing the LLM logic.
-    return processor.process_cv(raw_text)
+    from unittest.mock import MagicMock, patch
+    from cv_formatter.etl.semantic_structurer import ExtractedCV, ExperienceItem, TechnicalSkills
+    
+    # Create the mock result
+    mock_cv = ExtractedCV(
+        full_name="Juan Perez",
+        professional_summary="Senior Python Developer",
+        experience=[
+            ExperienceItem(
+                company="TechSolutions",
+                title="Backend Lead",
+                start_date="Enero 2022",
+                end_date="Presente",
+                description="Migración de arquitectura monolítica..."
+            ),
+            ExperienceItem(
+                company="WebAgency",
+                title="Full Stack Developer",
+                start_date="Marzo 2019",
+                end_date="Diciembre 2021",
+                description="Desarrollo de APIs RESTful..."
+            )
+        ],
+        skills=TechnicalSkills(
+            hard_skills=["Python", "Django", "AWS", "Docker", "React.js"],
+            soft_skills=[],
+            languages=[]
+        )
+    )
+
+    # Patch the structurer method
+    with patch('cv_formatter.etl.semantic_structurer.SemanticStructurer.extract_structure', return_value=mock_cv):
+        processor = CVProcessor()
+        # This will now use the mock
+        return processor.process_cv(raw_text)
 
 @pytest.fixture(scope="session")
 def cv_data(cv_processing_result):

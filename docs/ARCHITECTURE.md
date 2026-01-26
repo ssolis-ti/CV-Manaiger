@@ -1,135 +1,169 @@
-# 🏗️ System Architecture: CV-Manaiger
+# 🏗️ CV Manaiger: Arquitectura del Sistema
 
-> **[CONTEXT: ARCHITECTURE]**
-> This document describes the structural design, design patterns, and data flow of the CV-Manaiger backend.
-> **Target Audience:** System Architects, Future AI Agents.
+**Versión:** 3.0 (One-Shot Semantic Structurer)  
+**Fecha:** 2026-01-26  
+**Estado:** Stable  
 
 ---
 
-## 1. High-Level Design (The "Twin-Brain" System)
+## 📋 Tabla de Contenidos
 
-The system is designed as a **Linear Pipeline with a Facade**, but functionally operates as a "Twin-Brain" architecture:
-1.  **Left Brain (Structure)**: `Schematron-8b`. Deterministic, fact-based, standardizing.
-2.  **Right Brain (Enrichment)**: `Gemma-3-27b`. Creative, advisory, inferential.
+1. [Visión General](#1-visión-general)
+2. [Flujo de Datos](#2-flujo-de-datos)
+3. [Módulos del Sistema](#3-módulos-del-sistema)
+4. [Schemas de Datos](#4-schemas-de-datos)
+5. [Advertencias y Limitaciones](#5-advertencias-y-limitaciones)
 
-### 1.1 The "Twin-JSON" Payload
-Functionally, the system produces a split output to separate **Fact** from **Opinion**. This is the core architectural constraint.
+---
 
-```json
-{
-  "source_cv": {
-    "id": "uuid-v4",
-    "full_name": "Juan Perez",
-    "ats_analysis": { "score": 85, "issues": ["Emojis found"] } // <-- Triage/Audit Data
-  },
-  "enrichment": {
-    "target_cv_id": "uuid-v4",
-    "timeline_analysis": { "total_years": 5.2, "stability_score": 8 }, // <-- Deterministic Math
-    "market_signals": { "stack_detected": ["Django", "PostgreSQL"] }, // <-- Inferred
-    "profile_signals": { "strengths": ["Stable tenure"], "risk_flags": [] } // <-- Qualitative SWOT
-  }
-}
+## 1. Visión General
+
+CV Manaiger es un sistema de extracción de información de CVs que utiliza LLMs para convertir texto no estructurado en JSON estructurado.
+
+### Problema Resuelto
+- CVs copiados de PDFs llegan con formato roto (columnas, fechas desplazadas).
+- El sistema debe manejar inputs "salvajes" sin estructura visible.
+
+### Solución Implementada
+**One-Shot Semantic Structurer (V3):**
+- **Single Pass (LLM):** Extrae la estructura completa (Experiencia, Educación, Skills) en una sola llamada usando `response_format` estricto (Pydantic).
+- **Date Recovery Heuristic:** Proceso determinístico post-LLM para recuperar fechas en formatos columnares difíciles.
+
+---
+
+## 2. Flujo de Datos
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      ENTRADA: Texto Crudo                       │
+│   (Copy-paste de PDF, LinkedIn, Word - potencialmente caótico)  │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 0: TRIAGE                                                 │
+│  Archivo: cv_formatter/etl/triage.py                            │
+│  Función: Valida si el texto es un CV válido                    │
+│  ⚠️ ADVERTENCIA: Rechaza textos muy cortos o sin keywords       │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 0.5: ATS CHECK                                            │
+│  Archivo: cv_formatter/etl/ats_checker.py                       │
+│  Función: Evalúa parsabilidad ATS (score 0-100)                 │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 1: CLEANING                                               │
+│  Archivo: cv_formatter/etl/cleaner.py                           │
+│  Función: Normaliza Unicode, elimina emojis, estandariza bullets│
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 2: SEMANTIC STRUCTURER (One-Shot)                         │
+│  Archivo: cv_formatter/etl/semantic_structurer.py               │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │ extract_structure() - LLM (Schematron-8b / Gemma)       │   │
+│  │ - Input: Texto Limpio                                   │   │
+│  │ - Output: Objeto ExtractedCV (Pydantic)                 │   │
+│  │ - Contexto: Agrupa "Company + Role + Dates" nativamente │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 2.5: COLUMNAR DATE RECOVERY (Opcional)                    │
+│  Archivo: cv_formatter/main.py (Logica in-line)                 │
+│  Función: Si faltan fechas, busca patrones regex en el texto    │
+│  y las asigna secuencialmente (Heurística de lectura).          │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  STEP 3: CONVERT & ENRICH                                       │
+│  Archivo: cv_formatter/main.py                                  │
+│  Función: Convierte a CVData y ejecuta Enrichment (Gemma 3)     │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      SALIDA: Twin-JSON                          │
+│  {                                                              │
+│    "source_cv": { ... datos extraídos ... },                    │
+│    "enrichment": { ... insights opcionales ... }                │
+│  }                                                              │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Component Design (Facade Pattern)
+## 3. Módulos del Sistema
 
-The entry point is **`cv_formatter/main.py` -> `CVProcessor`**.
-It orchestrates 7 distinct sequential steps.
+### 3.1 Entry Points
 
-### Step 0: The Gatekeeper (`etl/triage.py`)
-*   **Role**: Document classification and language detection using `langdetect`.
-*   **Goal**: Reject non-CV input (garbage, recipes, code snippets) before API costs.
+| Archivo | Descripción |
+|---------|-------------|
+| `run_demo.py` | CLI interactiva con Rich. Punto de entrada para usuarios. |
+| `cv_formatter/main.py` | Orquestador principal (`CVProcessor`). Facade Pattern. |
 
-### Step 0.5: The Inspector (`etl/ats_checker.py`)
-*   **Role**: Audit for ATS-unfriendly elements (emojis, columns, symbols).
-*   **Goal**: Provide a "Parsability Score" (0-100).
+### 3.2 ETL & LLM
 
-### Step 1: The Janitor (`etl/cleaner.py`)
-*   **Role**: Normalization (NFKC), Emoji removal, bullet standardization.
-*   **Goal**: Reduce noise for the LLM context window.
+| Archivo | Rol | LLM Calls |
+|---------|-----|-----------|
+| `etl/triage.py` | Valida input | 0 |
+| `etl/ats_checker.py` | Score ATS | 0 |
+| `etl/cleaner.py` | Limpia texto | 0 |
+| `etl/semantic_structurer.py` | **One-Shot Structurer** (Core) | 1 |
+| `etl/date_preprocessor.py` | Regex de fechas (Recovery) | 0 |
 
-### Step 2: The Surgeon (`etl/section_extractor.py`)
-*   **Role**: Heuristic splitting (Regex).
-*   **Goal**: Identify logical blocks to optimize context.
+### 3.3 Enricher
 
-### Step 3: The Structurer (`llm/tagger.py`)
-*   **Model**: `inference-net/schematron-8b`
-*   **Constraint**: "Non-Negotiable Rules" for Date/Skill extraction.
-*   **Output**: Strict Pydantic `CVData` (Facts).
-
-### Step 4: The Formatter (`formatter/json_formatter.py`)
-*   **Role**: Serialization and schema validation.
-
-### Step 5: The Coach (`enricher/engine.py` + `enricher/timeline_analyzer.py`)
-*   **Layer 2.1 (Actuary)**: `TimelineAnalyzer` calculates years, average tenure, and gaps deterministically.
-*   **Layer 2.2 (Creative)**: `Gemma-3-27b` generates SWOT and Career advice.
-*   **Output**: Strict Pydantic `EnrichmentData`.
+| Archivo | Rol | LLM Calls |
+|---------|-----|-----------|
+| `enricher/engine.py` | Insights con Gemma 3 | 1 |
 
 ---
 
-## 3. Data Flow Diagram
+## 4. Schemas de Datos
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Facade (CVProcessor)
-    participant Triage
-    participant Cleaner
-    participant ATS_Audit
-    participant LLM_Structure (Schematron)
-    participant Enrichment (Service)
-    participant Timeline (Analyzer)
-    participant LLM_Enrich (Gemma 3)
+### 4.1 Output del Structurer
 
-    User->>Facade: Raw Text + Options
-    
-    Facade->>Triage: triage(text)
-    alt is Invalid
-        Triage-->>Facade: Fail Fast (Error)
-    end
-    
-    Facade->>ATS_Audit: check(text)
-    ATS_Audit-->>Facade: ATSAnalysis Score
-    
-    Facade->>Cleaner: clean_text()
-    Facade->>LLM_Structure: tag_cv(cleaned_text)
-    LLM_Structure-->>Facade: CVData (Facts)
-    
-    Facade->>Enrichment: enrich_cv(CVData)
-    Enrichment->>Timeline: analyze(CVData)
-    Timeline-->>Enrichment: TimelineAnalysis (Math)
-    
-    Enrichment->>LLM_Enrich: chat.completions(JSON)
-    LLM_Enrich-->>Enrichment: Qualitative Signals
-    Enrichment-->>Facade: EnrichmentData (Math + LLM)
-    
-    Facade-->>User: Twin-JSON Result
+```python
+class ExtractedCV(BaseModel):
+    full_name: Optional[str]
+    professional_summary: Optional[str]
+    experience: List[ExperienceItem]
+    education: List[EducationItem]
+    skills: TechnicalSkills
+```
+
+### 4.2 Output Final
+
+```python
+class CVData(BaseModel):
+    id: str
+    full_name: Optional[str]
+    email: Optional[str]
+    phone: Optional[str]
+    summary: Optional[str]
+    experience: List[ExperienceEntry]
+    education: List[EducationEntry]
+    certifications: List[CertificationEntry]
+    skills: SkillSection
+    ats_analysis: Optional[ATSAnalysis]
+    metadata: Optional[AnalysisMetadata]
 ```
 
 ---
 
-## 4. Key Decisions & Trade-offs
+## 5. Advertencias y Limitaciones
 
-| Decision | Impact | Trade-off |
-| :--- | :--- | :--- |
-| **Facade Pattern** | Simplifies integration. | Makes internal state harder to observe without logging. |
-| **Twin-JSON** | Separates concerns (Fact vs Opinion). | Requires two files/objects to get full picture. |
-| **Hybrid Analysis** | Uses Math (`TimelineAnalyzer`) for dates, LLM for text. | Requires specific strict schema for dates (`YYYY-MM`). |
-| **Gatekeeper** | Saves API tokens on bad input. | Might reject valid but very short/weird CVs. |
+### ⚡ Conocidas
 
----
-
-## 5. Directory Structure Map
-
-```text
-cv_formatter/
-├── etl/                # [Process] Cleaning, Extraction, Triage, ATS Checking
-├── llm/                # [AI Layer 1] Schematron/Stucture logic
-├── enricher/           # [AI Layer 2] Gemma/Coach logic + Timeline Analyzer
-├── formatter/          # [Schema] Data Definitions (Pydantic)
-├── utils/              # [Shared] Logging, Token Counters
-├── config.py           # [Env] Singleton configuration
-└── main.py             # [Entry] Facade orchestration
-```
+- **Costos LLM:** El One-Shot envía todo el texto del CV en una sola llamada. Para CVs muy largos (>4 páginas), podría truncarse o ser costoso.
+- **Enrichment Opcional:** Si el modelo de enrichment falla, el campo `enrichment` será `null`, pero `source_cv` persiste.
+- **Fechas Columnares:** La heurística de recuperación asume orden cronológico descendente visual. Si el PDF tiene un layout muy complejo (tablas anidadas), podría asignar fechas incorrectamente.

@@ -100,23 +100,25 @@ python run_demo.py
 Para los curiosos, así está organizado el "cerebro":
 
 ## Architecture 🏗️
-The system follows a modular **Facade Pattern**.
+The system follows a modular **Facade Pattern** with a **One-Shot LLM Extraction** strategy (V3).
 
 ```mermaid
 graph TD
     User(["User / CLI"]) --> Facade["CVProcessor (Main)"]
+    Facade --> Triage["Triage & ATS Check"]
     Facade --> ETL_Clean["Cleaner (Regex)"]
-    Facade --> ETL_Split["Extractor (Heuristics)"]
-    Facade --> Brain["LLMTagger (AI)"]
+    Facade --> Brain["Semantic Structurer (One-Shot LLM)"]
     Facade --> Format["JSON Formatter (Pydantic)"]
+    Facade --> Enrich["Enricher (Gemma 3)"]
     
-    ETL_Clean --> ETL_Split
-    ETL_Split --> Brain
-    Brain -->|Draft Data| Format
-    Format -->|Valid JSON| Output[("Files")]
-    
-    subgraph Observability
-    Logger["Rich Logger"] -.-> Facade
+    Triage --> ETL_Clean
+    ETL_Clean --> Brain
+    Brain -->|Extracted Structure| Format
+    Format -->|Twin-JSON| Enrich
+    Enrich --> Output[("JSON/Files")]
+
+    subgraph Core Logic
+    Brain
     end
 ```
 

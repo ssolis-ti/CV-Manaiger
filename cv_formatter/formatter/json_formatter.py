@@ -72,6 +72,12 @@ class EducationEntry(BaseModel):
     institution: Optional[str] = Field(None, description="University or Institution")
     year: Optional[str] = Field(None, description="Year of graduation or period")
 
+class CertificationEntry(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = Field(..., description="Name of certification")
+    issuer: Optional[str] = Field(None, description="Issuing organization")
+    year: Optional[str] = Field(None, description="Year obtained")
+
 class SkillSection(BaseModel):
     hard_skills: List[str] = Field(default_factory=list, description="Technical skills")
     soft_skills: List[str] = Field(default_factory=list, description="Soft skills / competencies")
@@ -97,6 +103,12 @@ class AnalysisMetadata(BaseModel):
     strength_signals: List[str] = Field(default_factory=list, description="Positive indicators (e.g. 'Promotion', 'High Impact', 'Prestigous Company')")
 
 class ATSAnalysis(BaseModel):
+    """
+    ATS compatibility analysis results.
+    
+    Warning: LLM sometimes returns score as float (0.95) instead of int (95).
+    The check_types validator handles this conversion.
+    """
     score: int = Field(0, description="ATS Compatibility Score (0-100)")
     is_parsable: bool = Field(True, description="Human readable?")
     issues: List[str] = Field(default_factory=list, description="List of ATS-unfriendly elements found (e.g. 'Emojis', 'Columns identified')")
@@ -104,19 +116,28 @@ class ATSAnalysis(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def check_lists(cls, v):
+    def check_types(cls, v):
         """
-        Resilience: LLM sometimes returns '0' or '1' instead of a list for issues.
+        Resilience validator for LLM output inconsistencies.
+        
+        Fixes:
+        1. score: float (0.95) → int (95)
+        2. issues: int/str → list
         """
         if isinstance(v, dict):
+            # Fix 1: Convert float score to int
+            score = v.get('score')
+            if isinstance(score, float):
+                # 0.95 → 95, or 85.5 → 85
+                v['score'] = int(score * 100) if score <= 1 else int(score)
+            
+            # Fix 2: Ensure lists are lists
             for field in ['issues', 'missing_sections']:
                 val = v.get(field)
                 if isinstance(val, int):
-                    # If it says "0 issues", convert to empty list
                     v[field] = []
                 elif isinstance(val, str):
-                     # If it says "None", convert to empty
-                     v[field] = [val]
+                    v[field] = [val] if val else []
         return v
 
 
@@ -135,6 +156,7 @@ class CVData(BaseModel):
     
     experience: List[ExperienceEntry] = Field(default_factory=list)
     education: List[EducationEntry] = Field(default_factory=list)
+    certifications: List[CertificationEntry] = Field(default_factory=list, description="List of certifications")
     skills: SkillSection = Field(default_factory=SkillSection)
     languages: List[str] = Field(default_factory=list)
     
